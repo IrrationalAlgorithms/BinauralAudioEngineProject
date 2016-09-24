@@ -26,3 +26,9 @@ C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\Mixer\bin\Debug\Shar
 C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\Mixer\bin\Debug\SoundGenerator.pdb
 C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\Mixer\bin\Debug\SharpDX.XAudio2.xml
 C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\Mixer\bin\Debug\SharpDX.xml
+C:\Users\baski\Documents\SharpDX\PublicMixer\Mixer\bin\Debug\Mixer.exe.config
+C:\Users\baski\Documents\SharpDX\PublicMixer\Mixer\obj\Debug\Mixer.exe
+C:\Users\baski\Documents\SharpDX\PublicMixer\Mixer\obj\Debug\Mixer.pdb
+C:\Users\baski\Documents\SharpDX\PublicMixer\Mixer\obj\Debug\Mixer.csprojResolveAssemblyReference.cache
+C:\Users\baski\Documents\SharpDX\PublicMixer\Mixer\obj\Debug\App.g.cs
+C:\Users\baski\Documents\SharpDX\PublicMixer\Mixer\obj\Debug\Mixer_MarkupCompile.cache

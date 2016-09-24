@@ -1,0 +1,10 @@
+C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\bin\Debug\SoundGenerator.dll.config
+C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\bin\Debug\SoundGenerator.dll
+C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\bin\Debug\SoundGenerator.pdb
+C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\bin\Debug\SharpDX.dll
+C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\bin\Debug\SharpDX.XAudio2.dll
+C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\bin\Debug\SharpDX.xml
+C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\bin\Debug\SharpDX.XAudio2.xml
+C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\obj\Debug\SoundGenerator.csprojResolveAssemblyReference.cache
+C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\obj\Debug\SoundGenerator.dll
+C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\obj\Debug\SoundGenerator.pdb

@@ -24,6 +24,8 @@ namespace Mixer
     /// </summary>
     public partial class MainWindow : Window
     {
+        private SoundGenerator soundGenerator;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -42,5 +44,10 @@ namespace Mixer
             //handler code goes here. 
             new SoundGenerator.SineGenerator().Generate();
         }
+        private void startStop(object sender, RoutedEventArgs e)
+        {
+            new SoundGenerator.SineGenerator().Generate();
+        }
+
     }
 }

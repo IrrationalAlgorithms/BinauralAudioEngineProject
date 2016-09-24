@@ -8,6 +8,7 @@ C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\bin\D
 C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\obj\Debug\SoundGenerator.csprojResolveAssemblyReference.cache
 C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\obj\Debug\SoundGenerator.dll
 C:\Users\Marina\documents\visual studio 2015\Projects\Mixer\SoundGenerator\obj\Debug\SoundGenerator.pdb
+<<<<<<< HEAD
 C:\Users\baski\Documents\SharpDX\PublicMixer\SoundGenerator\bin\Debug\SoundGenerator.dll.config
 C:\Users\baski\Documents\SharpDX\PublicMixer\SoundGenerator\bin\Debug\SoundGenerator.dll
 C:\Users\baski\Documents\SharpDX\PublicMixer\SoundGenerator\bin\Debug\SoundGenerator.pdb
@@ -18,3 +19,15 @@ C:\Users\baski\Documents\SharpDX\PublicMixer\SoundGenerator\bin\Debug\SharpDX.XA
 C:\Users\baski\Documents\SharpDX\PublicMixer\SoundGenerator\obj\Debug\SoundGenerator.csprojResolveAssemblyReference.cache
 C:\Users\baski\Documents\SharpDX\PublicMixer\SoundGenerator\obj\Debug\SoundGenerator.dll
 C:\Users\baski\Documents\SharpDX\PublicMixer\SoundGenerator\obj\Debug\SoundGenerator.pdb
+=======
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\SoundGenerator\bin\Debug\SoundGenerator.dll.config
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\SoundGenerator\bin\Debug\SoundGenerator.dll
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\SoundGenerator\bin\Debug\SoundGenerator.pdb
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\SoundGenerator\bin\Debug\SharpDX.dll
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\SoundGenerator\bin\Debug\SharpDX.XAudio2.dll
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\SoundGenerator\bin\Debug\SharpDX.xml
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\SoundGenerator\bin\Debug\SharpDX.XAudio2.xml
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\SoundGenerator\obj\Debug\SoundGenerator.csprojResolveAssemblyReference.cache
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\SoundGenerator\obj\Debug\SoundGenerator.dll
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\SoundGenerator\obj\Debug\SoundGenerator.pdb
+>>>>>>> ec471e4a2ae1c6c78d026cc46aaffe7b28999730

@@ -3,43 +3,61 @@ using System.Threading;
 using SharpDX;
 using SharpDX.Multimedia;
 using SharpDX.XAudio2;
+using System.Threading.Tasks;
 
 namespace SoundGenerator
 {
     public class SineGenerator
     {
-        public void Generate()
+        SourceVoice _sourceVoice;
+        XAudio2 _xaudio2;
+        MasteringVoice _masteringVoice;
+        WaveFormat _waveFormat;
+        DataStream _dataStream;
+        int _bufferSize;
+        bool _stopFlag;
+
+        int _valueRate;
+
+        public SineGenerator()
         {
-            var xaudio2 = new XAudio2();
-            var masteringVoice = new MasteringVoice(xaudio2);
+            _xaudio2 = new XAudio2();
+            _masteringVoice = new MasteringVoice(_xaudio2);
 
-            var waveFormat = new WaveFormat(44100, 32, 2);
-            var sourceVoice = new SourceVoice(xaudio2, waveFormat);
+            _waveFormat = new WaveFormat(44100, 32, 2);
+            _sourceVoice = new SourceVoice(_xaudio2, _waveFormat);
 
-            int bufferSize = waveFormat.ConvertLatencyToByteSize(60000);
-            var dataStream = new DataStream(bufferSize, true, true);
+            _bufferSize = _waveFormat.ConvertLatencyToByteSize(60000);
+            _dataStream = new DataStream(_bufferSize, true, true);
 
-            int numberOfSamples = bufferSize / waveFormat.BlockAlign;
-            for (int i = 0; i < numberOfSamples; i++)
+            _valueRate = 0;
+            _stopFlag = false;
+        }
+
+        public async Task AddValue(int value = 10)
+        {
+            _valueRate += value;
+        }
+
+        public async Task Generate()
+        {
+            while (!_stopFlag)
             {
-                float value = (float)(Math.Cos(2 * Math.PI * (220.0 + 4.0) * i / waveFormat.SampleRate) * 0.5);
-                dataStream.Write(value);
-                dataStream.Write(value);
-            }
-            dataStream.Position = 0;
+                int numberOfSamples = _bufferSize / _waveFormat.BlockAlign;
+                for (int i = 0; i < numberOfSamples; i++)
+                {
+                    float value = (float)(Math.Sin(2 * Math.PI * _valueRate / _waveFormat.SampleRate) * 0.5);
+                    _dataStream.Write(value);
+                }
+                _dataStream.Position = 0;
 
-            var audioBuffer = new AudioBuffer { Stream = dataStream, Flags = BufferFlags.EndOfStream, AudioBytes = bufferSize };
+                var audioBuffer = new AudioBuffer { Stream = _dataStream, Flags = BufferFlags.EndOfStream, AudioBytes = _bufferSize };
 
-            sourceVoice.SubmitSourceBuffer(audioBuffer, null);
-
-            sourceVoice.Start();
-
-            Console.WriteLine("Play sound");
-            for (int i = 0; i < 60; i++)
-            {
-                Console.Write(".");
+                _sourceVoice.Stop();
+                _sourceVoice.SubmitSourceBuffer(audioBuffer, null);
+                _sourceVoice.Start();
                 Console.Out.Flush();
-                Thread.Sleep(1000);
+                Thread.Sleep(1100);
             }
         }
     }

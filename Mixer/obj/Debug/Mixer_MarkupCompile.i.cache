@@ -4,16 +4,28 @@
 winexe
 C#
 .cs
+<<<<<<< HEAD
 C:\Users\baski\Documents\SharpDX\PublicMixer\Mixer\obj\Debug\
+=======
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\Mixer\obj\Debug\
+>>>>>>> ec471e4a2ae1c6c78d026cc46aaffe7b28999730
 Mixer
 none
 false
 DEBUG;TRACE
+<<<<<<< HEAD
 C:\Users\baski\Documents\SharpDX\PublicMixer\Mixer\App.xaml
 11151548125
 
 930970075
 17-729448933
+=======
+C:\Users\Marina\Documents\Visual Studio 2015\Projects\PublicMixer\Mixer\App.xaml
+11151548125
+
+91925916782
+1730504911
+>>>>>>> ec471e4a2ae1c6c78d026cc46aaffe7b28999730
 MainWindow.xaml;
 
 False

@@ -24,9 +24,12 @@ namespace Mixer
     /// </summary>
     public partial class MainWindow : Window
     {
+        SoundGenerator.SineGenerator _generator;
+
         public MainWindow()
         {
             InitializeComponent();
+            _generator = new SoundGenerator.SineGenerator();
             Loaded += new RoutedEventHandler(Window_Loaded);
         }
 
@@ -35,12 +38,22 @@ namespace Mixer
             RoutedCommand dowmCommand = new RoutedCommand();
             dowmCommand.InputGestures.Add(new KeyGesture(Key.Down));
             CommandBindings.Add(new CommandBinding(dowmCommand, downCommandEvent));
+            dowmCommand.InputGestures.Add(new KeyGesture(Key.Up));
+            CommandBindings.Add(new CommandBinding(dowmCommand, upCommandEvent));
+        }
+
+        private void upCommandEvent(object sender, RoutedEventArgs e)
+        {
+            //handler code goes here. 
+            var task = _generator.AddValue();
+            task.Start();
         }
 
         private void downCommandEvent(object sender, RoutedEventArgs e)
         {
             //handler code goes here. 
-            new SoundGenerator.SineGenerator().Generate();
+            var task = _generator.Generate();
+            task.Start();
         }
     }
 }

@@ -22,13 +22,9 @@ namespace Mixer
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
-    {
-<<<<<<< HEAD
-        private SoundGenerator soundGenerator;
-=======
-        SoundGenerator.SineGenerator _generator;
->>>>>>> ec471e4a2ae1c6c78d026cc46aaffe7b28999730
+    public partial class MainWindow : Window { 
+
+        private SoundGenerator.SineGenerator _generator;
 
         public MainWindow()
         {
@@ -41,27 +37,51 @@ namespace Mixer
         {
             RoutedCommand dowmCommand = new RoutedCommand();
             dowmCommand.InputGestures.Add(new KeyGesture(Key.Down));
-            CommandBindings.Add(new CommandBinding(dowmCommand, downCommandEvent));
+            CommandBindings.Add(new CommandBinding(dowmCommand, rateUp));
             dowmCommand.InputGestures.Add(new KeyGesture(Key.Up));
-            CommandBindings.Add(new CommandBinding(dowmCommand, upCommandEvent));
+            CommandBindings.Add(new CommandBinding(dowmCommand, rateDown));
         }
 
-        private void upCommandEvent(object sender, RoutedEventArgs e)
+        private void rateUp(object sender, RoutedEventArgs e)
         {
-            //handler code goes here. 
-            var task = _generator.AddValue();
-            task.Start();
+            //handler code goes here.
+             _generator.AddValue(10);
+
+        }
+        private void rateDown(object sender, RoutedEventArgs e)
+        {
+            //handler code goes here.
+           _generator.AddValue(-10);
+            
         }
 
-        private void downCommandEvent(object sender, RoutedEventArgs e)
+        private void ampUp(object sender, RoutedEventArgs e)
         {
-            //handler code goes here. 
-            var task = _generator.Generate();
-            task.Start();
+            //handler code goes here.
+            _generator.AddValueAmp(+10);
         }
-        private void startStop(object sender, RoutedEventArgs e)
+
+        private void ampDown(object sender, RoutedEventArgs e)
         {
-            new SoundGenerator.SineGenerator().Generate();
+            //handler code goes here.
+            _generator.AddValueAmp(-10);
+        }
+
+        private async void startStop(object sender, RoutedEventArgs e)
+        {
+            var btn = (System.Windows.Controls.Button)sender;
+            if (_generator.stopFlag)
+            {
+                btn.Content = "Stop";
+                _generator.stopFlag = false;
+                await _generator.Generate();
+            }
+            else
+            {
+                btn.Content = "Start";
+                _generator.stopFlag = true;
+            }
+
         }
 
     }

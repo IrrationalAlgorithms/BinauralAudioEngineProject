@@ -27,16 +27,16 @@
             </Grid.RowDefinitions>
             <Label Content="Rate" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                    FontSize="14" Grid.Column="0" Grid.Row="0"/>
-            <Button x:Name="btnaRteUp" HorizontalAlignment="Left" Grid.Column="0" Grid.Row="1" 
-                    ClickMode="Press" Click="rateChanged" Content="Up" Width="60"/>
+            <Button x:Name="btnRateUp" HorizontalAlignment="Left" Grid.Column="0" Grid.Row="1" 
+                    ClickMode="Press" Click="rateUp" Content="Up" Width="60"/>
             <Button x:Name="btnRateDown" HorizontalAlignment="Left" Grid.Column="0" Grid.Row="2"
-                    ClickMode="Press" Click="rateChanged" Content="Down" Width="60"/>
+                    ClickMode="Press" Click="rateDown" Content="Down" Width="60"/>
             <Label Content="Amplitude" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                    FontSize="14" Grid.Column="1" Grid.Row="0"/>
             <Button x:Name="btnAmpUp" HorizontalAlignment="Left" Grid.Column="1" Grid.Row="1"
-                    ClickMode="Press" Click="ampChanged" Content="Up" Width="60"/>
+                    ClickMode="Press" Click="ampUp" Content="Up" Width="60"/>
             <Button x:Name="btnAmpDown" HorizontalAlignment="Left" Grid.Column="1" Grid.Row="2"
-                    ClickMode="Press" Click="ampChanged" Content="Down" Width="60" />
+                    ClickMode="Press" Click="ampDown" Content="Down" Width="60" />
         </Grid>
         <Grid Margin="0,0,0,0" x:Name="gridStartStop" VerticalAlignment="Bottom" HorizontalAlignment="Center"
 			ClipToBounds="False" Background="Transparent" Width="200" Grid.Column="0" Grid.Row="1">

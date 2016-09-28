@@ -68,7 +68,6 @@ namespace SoundGenerator
             if (playerState == PlayerState.Playing)
             {
                 playerState = PlayerState.Paused;
- 
                 playEvent.Reset();
             }
         }

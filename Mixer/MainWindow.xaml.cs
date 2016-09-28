@@ -25,11 +25,13 @@ namespace Mixer
     public partial class MainWindow : Window { 
 
         private SoundGenerator.SineGenerator _generator;
+        private SoundGenerator.WavWorker _wavWorker;
 
         public MainWindow()
         {
             InitializeComponent();
             _generator = new SoundGenerator.SineGenerator();
+            _wavWorker = new SoundGenerator.WavWorker();
             Loaded += new RoutedEventHandler(Window_Loaded);
         }
 
@@ -40,6 +42,14 @@ namespace Mixer
             CommandBindings.Add(new CommandBinding(dowmCommand, rateUp));
             dowmCommand.InputGestures.Add(new KeyGesture(Key.Up));
             CommandBindings.Add(new CommandBinding(dowmCommand, rateDown));
+
+            RoutedCommand dowmCommand2 = new RoutedCommand();
+            dowmCommand2.InputGestures.Add(new KeyGesture(Key.Left));
+            CommandBindings.Add(new CommandBinding(dowmCommand2, button1_Click));
+
+            RoutedCommand dowmCommand3 = new RoutedCommand();
+            dowmCommand3.InputGestures.Add(new KeyGesture(Key.Right));
+            CommandBindings.Add(new CommandBinding(dowmCommand3, button2_Click));
         }
 
         private void rateUp(object sender, RoutedEventArgs e)
@@ -87,6 +97,16 @@ namespace Mixer
             var log = _generator.PrintLog();
             foreach (var item in log)
                 listBox.Items.Add(item);
+        }
+
+        private void button1_Click(object sender, RoutedEventArgs e)
+        {
+            _wavWorker.PlayWav(SoundGenerator.WavSample.test);
+        }
+
+        private void button2_Click(object sender, RoutedEventArgs e)
+        {
+            _wavWorker.PlayWav(SoundGenerator.WavSample.alesis);
         }
     }
 }

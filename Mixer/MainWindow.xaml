@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Mixer"
         mc:Ignorable="d"
-        Title="MainWindow" Height="150" Width="300">
+        Title="MainWindow" Height="358.905" Width="489.224">
     <Grid x:Name="grid1" Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -38,8 +38,8 @@
             <Button x:Name="btnAmpDown" HorizontalAlignment="Left" Grid.Column="1" Grid.Row="2"
                     ClickMode="Press" Click="ampDown" Content="Down" Width="60" />
         </Grid>
-        <Grid Margin="0,0,0,0" x:Name="gridStartStop" VerticalAlignment="Bottom" HorizontalAlignment="Center"
-			ClipToBounds="False" Background="Transparent" Width="200" Grid.Column="0" Grid.Row="1">
+        <Grid Margin="113,0,148,196" x:Name="gridStartStop" VerticalAlignment="Bottom" HorizontalAlignment="Center"
+			ClipToBounds="False" Background="Transparent" Width="200" Grid.Column="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
@@ -49,5 +49,17 @@
             <Button x:Name="btnStartStop" HorizontalAlignment="Center" Grid.Column="0" Grid.Row="0"
                     ClickMode="Press" Click="startStop" Content="Start" Width="60" />
         </Grid>
+        <ListBox x:Name="listBox" HorizontalAlignment="Left" Height="160" Margin="10,138,0,0" VerticalAlignment="Top" Width="441"/>
+        <Label x:Name="label" Content="log" HorizontalAlignment="Left" Margin="15,107,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="button" Content="Print" HorizontalAlignment="Left" Margin="54,101,0,0" VerticalAlignment="Top" Width="76" Click="button_Click" RenderTransformOrigin="0.5,0.5">
+            <Button.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform/>
+                    <RotateTransform Angle="-20.219"/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </Button.RenderTransform>
+        </Button>
     </Grid>
 </Window>

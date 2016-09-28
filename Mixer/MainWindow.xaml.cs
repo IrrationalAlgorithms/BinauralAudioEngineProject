@@ -70,19 +70,23 @@ namespace Mixer
         private async void startStop(object sender, RoutedEventArgs e)
         {
             var btn = (System.Windows.Controls.Button)sender;
-            if (_generator.stopFlag)
+            if (btn.Content.ToString() == "Start")
             {
                 btn.Content = "Stop";
-                _generator.stopFlag = false;
-                await _generator.Generate();
+                _generator.Play();
             }
             else
             {
                 btn.Content = "Start";
-                _generator.stopFlag = true;
+                _generator.Pause();
             }
-
         }
 
+        private void button_Click(object sender, RoutedEventArgs e)
+        {
+            var log = _generator.PrintLog();
+            foreach (var item in log)
+                listBox.Items.Add(item);
+        }
     }
 }

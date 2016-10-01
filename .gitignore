@@ -3,3 +3,4 @@
 /SoundGenerator/bin/*
 /SoundGenerator/obj/*
 /.vs/*
+/packages/*

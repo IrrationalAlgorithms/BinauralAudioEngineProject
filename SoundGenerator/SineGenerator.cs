@@ -10,20 +10,25 @@ namespace SoundGenerator
 {
     public class SineGenerator
     {
-        SourceVoice _sourceVoice;
-        XAudio2 _xaudio2;
-        MasteringVoice _masteringVoice;
-        WaveFormat _waveFormat;
-        DataStream _dataStream;
-        int _bufferSize;
-        PlayerState playerState { get; set; }
-        Task playingTask;
-        ManualResetEventSlim playEvent;
+        private const int _waitPrecision = 1;
+        private SourceVoice _sourceVoice;
+        private XAudio2 _xaudio2;
+        private MasteringVoice _masteringVoice;
+        private WaveFormat _waveFormat;
+        private DataStream _dataStream;
+        private AudioBuffer[] _audioBuffersRing;
+        private DataPointer[] _memBuffers;
+        private int _bufferSize;
+        private AutoResetEvent _bufferEndEvent;
+        private PlayerState _playerState { get; set; }
+        private Task _playSoundTask;
+        private int _nextBuffer;
+        private ManualResetEventSlim _playEvent;
 
-        List<string> log;
+        private List<string> _log;
 
-        int _valueRate;
-        float _valueAmp;
+        private int _valueRate;
+        private float _valueAmp;
 
         public SineGenerator()
         {
@@ -31,22 +36,41 @@ namespace SoundGenerator
             _masteringVoice = new MasteringVoice(_xaudio2);
 
             _waveFormat = new WaveFormat(44100, 32, 2);
+
             _sourceVoice = new SourceVoice(_xaudio2, _waveFormat);
 
-            _bufferSize = _waveFormat.ConvertLatencyToByteSize (60000);
+            _bufferSize = _waveFormat.ConvertLatencyToByteSize(7);
             _dataStream = new DataStream(_bufferSize, true, true);
+
+            _sourceVoice.BufferEnd += sourceVoice_BufferEnd;
+            _sourceVoice.Start();
+
+            _bufferEndEvent = new AutoResetEvent(false);
 
             _valueRate = 0;
             _valueAmp = 0.5f;
 
-            playingTask = Task.Factory.StartNew(PlaySoundAsync, TaskCreationOptions.LongRunning);
-            playEvent = new ManualResetEventSlim();
-            log = new List<string>();
+            _nextBuffer = 0;
+
+            _playEvent = new ManualResetEventSlim();
+            _log = new List<string>();
+
+            // Pre-allocate buffers
+            _audioBuffersRing = new AudioBuffer[3];
+            _memBuffers = new DataPointer[_audioBuffersRing.Length];
+            for (int i = 0; i < _audioBuffersRing.Length; i++)
+            {
+                _audioBuffersRing[i] = new AudioBuffer();
+                _memBuffers[i].Size = _bufferSize;
+                _memBuffers[i].Pointer = Utilities.AllocateMemory(_memBuffers[i].Size);
+            }
+
+            _playSoundTask = Task.Factory.StartNew(PlaySoundAsync, TaskCreationOptions.LongRunning);
         }
 
         public void AddValue(int value = 10)
         {
-           _valueRate += value;
+            _valueRate += value;
         }
 
         public void AddValueAmp(float value)
@@ -56,63 +80,112 @@ namespace SoundGenerator
 
         public void Play()
         {
-            if (playerState != PlayerState.Playing)
+            if (_playerState != PlayerState.Playing)
             {
-                playerState = PlayerState.Playing;
-                playEvent.Set();
+                _playerState = PlayerState.Playing;
+                _playEvent.Set();
             }
         }
 
         public void Pause()
         {
-            if (playerState == PlayerState.Playing)
+            if (_playerState == PlayerState.Playing)
             {
-                playerState = PlayerState.Paused;
-                playEvent.Reset();
+                _playerState = PlayerState.Paused;
+                _playEvent.Reset();
             }
         }
 
         private void PlaySoundAsync()
         {
-            while (true)
+            try
             {
-                if (playEvent.Wait(1))
+                int numberOfSamples = _bufferSize / _waveFormat.BlockAlign;
+
+                while (true)
                 {
-                    int numberOfSamples = _bufferSize / _waveFormat.BlockAlign;
+                    while (_playerState != PlayerState.Stopped)
+                    {
+                        if (_playEvent.Wait(_waitPrecision))
+                            break;
+                    }
+
                     for (int i = 0; i < numberOfSamples; i++)
                     {
                         float value = (float)(Math.Sin(2 * Math.PI * _valueRate * i / _waveFormat.SampleRate) * _valueAmp);
                         _dataStream.Write(value);
+                        _dataStream.Write(value);
                     }
+
                     _dataStream.Position = 0;
 
-                    var audioBuffer = new AudioBuffer { Stream = _dataStream, Flags = BufferFlags.EndOfStream, AudioBytes = _bufferSize };
+                    while (_sourceVoice.State.BuffersQueued == _audioBuffersRing.Length)
+                        _bufferEndEvent.WaitOne(_waitPrecision);
 
-                    //WriteLog(String.Format("{0}, {1}, {2}", "", "", ""));
+                    if (_bufferSize > _memBuffers[_nextBuffer].Size)
+                    {
+                        if (_memBuffers[_nextBuffer].Pointer != IntPtr.Zero)
+                            Utilities.FreeMemory(_memBuffers[_nextBuffer].Pointer);
 
-                    _sourceVoice.Stop();
-                    _sourceVoice.SubmitSourceBuffer(audioBuffer, null);
-                    _sourceVoice.Start();
-                    Console.Out.Flush();
-                    Task.Delay(1100);
-                }
-                else
-                {
-                    _sourceVoice.Stop();
+                        _memBuffers[_nextBuffer].Pointer = Utilities.AllocateMemory(_bufferSize);
+                        _memBuffers[_nextBuffer].Size = _bufferSize;
+                    }
+
+                    // Copy the memory from MediaFoundation AudioDecoder to the buffer that is going to be played.
+                    Utilities.CopyMemory(_memBuffers[_nextBuffer].Pointer, _dataStream.DataPointer, _bufferSize);
+
+                    // Set the pointer to the data.
+                    _audioBuffersRing[_nextBuffer].AudioDataPointer = _memBuffers[_nextBuffer].Pointer;
+                    _audioBuffersRing[_nextBuffer].AudioBytes = _bufferSize;
+
+                    _sourceVoice.SubmitSourceBuffer(_audioBuffersRing[_nextBuffer], null);
+
+                    // Go to next entry in the ringg audio buffer
+                    _nextBuffer = ++_nextBuffer % _audioBuffersRing.Length;
+
+
                 }
             }
+            finally
+            {
+                Close();
+            }
+
         }
 
         private void WriteLog(string logMsg)
         {
-            log.Add(logMsg);
+            _log.Add(logMsg);
         }
 
         public List<string> PrintLog()
         {
-            var a = log;
-            log = new List<string>();
+            var a = _log;
+            _log = new List<string>();
             return a;
+        }
+        void sourceVoice_BufferEnd(IntPtr obj)
+        {
+            _bufferEndEvent.Set();
+        }
+
+        public void Close()
+        {
+            Utilities.Dispose(ref _masteringVoice);
+            Utilities.Dispose(ref _xaudio2);
+        }
+
+        public void Dispose()
+        {
+
+            _sourceVoice.Dispose();
+            _sourceVoice = null;
+
+            for (int i = 0; i < _audioBuffersRing.Length; i++)
+            {
+                Utilities.FreeMemory(_memBuffers[i].Pointer);
+                _memBuffers[i].Pointer = IntPtr.Zero;
+            }
         }
     }
 }

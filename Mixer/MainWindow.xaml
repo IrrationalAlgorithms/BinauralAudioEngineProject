@@ -6,6 +6,46 @@
         xmlns:local="clr-namespace:Mixer"
         mc:Ignorable="d"
         Title="MainWindow" Height="358.905" Width="489.224">
+    
+    <Window.Resources>
+        <RoutedUICommand x:Key="rateUpCommand" Text="Text" />
+        <RoutedUICommand x:Key="rateDownCommand" Text="Another Text" />
+        <RoutedUICommand x:Key="startStopCommand" Text="Another Text" />
+        <RoutedUICommand x:Key="playSound1Command" Text="Another Text" />
+        <RoutedUICommand x:Key="playSound2Command" Text="Another Text" />
+
+        <Style TargetType="Button" x:Key="GelButton" >
+            <Setter Property="IsEnabled" Value="True" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Mode}" Value="Start">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Window.CommandBindings>
+        <CommandBinding Command="{StaticResource rateUpCommand}" 
+                    Executed="RateUp" />
+        <CommandBinding Command="{StaticResource rateDownCommand}" 
+                    Executed="RateDown" />
+        <CommandBinding Command="{StaticResource startStopCommand}" 
+                    Executed="StartStop" />
+        <CommandBinding Command="{StaticResource playSound1Command}" 
+                    Executed="PlaySound1" />
+        <CommandBinding Command="{StaticResource playSound2Command}" 
+                    Executed="PlaySound2" />
+    </Window.CommandBindings>
+
+    <Window.InputBindings>
+        <KeyBinding Key="Left"  Command="{StaticResource rateUpCommand}" />
+        <KeyBinding Key="Right" Command="{StaticResource rateDownCommand}" />
+        <KeyBinding Key="Space" Command="{StaticResource startStopCommand}" />
+        <KeyBinding Key="D1" Command="{StaticResource playSound1Command}" />
+        <KeyBinding Key="D2" Command="{StaticResource playSound2Command}" />
+    </Window.InputBindings>
+
+    
     <Grid x:Name="grid1" Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -27,16 +67,16 @@
             </Grid.RowDefinitions>
             <Label Content="Rate" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                    FontSize="14" Grid.Column="0" Grid.Row="0" Margin="10,-5,0,5"/>
-            <Button x:Name="btnRateUp" HorizontalAlignment="Left" Grid.Column="0" Grid.Row="1" 
-                    ClickMode="Press" Click="rateUp" Content="Up" Width="60" Margin="10,0,0,0"/>
-            <Button x:Name="btnRateDown" HorizontalAlignment="Left" Grid.Column="0" Grid.Row="2"
-                    ClickMode="Press" Click="rateDown" Content="Down" Width="60" Margin="10,0,0,0"/>
+            <Button x:Name="btnRateUp" HorizontalAlignment="Left" Grid.Column="0" Grid.Row="1" Style="{StaticResource GelButton}" 
+                    ClickMode="Press" Command="{StaticResource rateUpCommand}" Content="Up" Width="60" Margin="10,0,0,0"/>
+            <Button x:Name="btnRateDown" HorizontalAlignment="Left" Grid.Column="0" Grid.Row="2" Style="{StaticResource GelButton}"
+                    ClickMode="Press" Command="{StaticResource rateDownCommand}" Content="Down" Width="60" Margin="10,0,0,0"/>
             <Label Content="Amplitude" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                    FontSize="14" Grid.Column="1" Grid.Row="0"/>
-            <Button x:Name="btnAmpUp" HorizontalAlignment="Left" Grid.Column="1" Grid.Row="1"
-                    ClickMode="Press" Click="ampUp" Content="Up" Width="60"/>
-            <Button x:Name="btnAmpDown" HorizontalAlignment="Left" Grid.Column="1" Grid.Row="2"
-                    ClickMode="Press" Click="ampDown" Content="Down" Width="60" />
+            <Button x:Name="btnAmpUp" HorizontalAlignment="Left" Grid.Column="1" Grid.Row="1" Style="{StaticResource GelButton}"
+                    ClickMode="Press" Click="AmpUp" Content="Up" Width="60"/>
+            <Button x:Name="btnAmpDown" HorizontalAlignment="Left" Grid.Column="1" Grid.Row="2" Style="{StaticResource GelButton}"
+                    ClickMode="Press" Click="AmpDown" Content="Down" Width="60" />
         </Grid>
         <Grid Margin="23,0,238,195" x:Name="gridStartStop" VerticalAlignment="Bottom" HorizontalAlignment="Center"
 			ClipToBounds="False" Background="Transparent" Width="200" Grid.Column="0">
@@ -47,11 +87,13 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Button x:Name="btnStartStop" HorizontalAlignment="Center" Grid.Column="0" Grid.Row="0"
-                    ClickMode="Press" Click="startStop" Content="Start" Width="60" />
+                    ClickMode="Press" Command="{StaticResource startStopCommand}" Content="{Binding Path=Mode, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" Width="60" />
         </Grid>
-        <ListBox x:Name="listBox" HorizontalAlignment="Left" Height="132" Margin="10,166,0,0" VerticalAlignment="Top" Width="213"/>
+        <ListBox x:Name="listBox" HorizontalAlignment="Left" Height="132" Margin="10,166,0,0" VerticalAlignment="Top"
+                 Width="213"/>
         <Label x:Name="label" Content="log" HorizontalAlignment="Left" Margin="12,135,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="button" Content="Print" HorizontalAlignment="Left" Margin="45,136,0,0" VerticalAlignment="Top" Width="76" Click="button_Click" RenderTransformOrigin="0.5,0.5">
+        <Button x:Name="button" Content="Print" HorizontalAlignment="Left" Margin="45,136,0,0" VerticalAlignment="Top"
+                Width="76" Click="Print" RenderTransformOrigin="0.5,0.5">
             <Button.RenderTransform>
                 <TransformGroup>
                     <ScaleTransform/>
@@ -61,7 +103,8 @@
                 </TransformGroup>
             </Button.RenderTransform>
         </Button>
-        <GridSplitter x:Name="gridSplitter" HorizontalAlignment="Left" Height="288" Margin="239,10,0,0" VerticalAlignment="Top" Width="4" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}">
+        <GridSplitter x:Name="gridSplitter" HorizontalAlignment="Left" Height="288" Margin="239,10,0,0" VerticalAlignment="Top"
+                      Width="4" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}">
             <GridSplitter.Background>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                     <GradientStop Color="#FF6E6E6E" Offset="0"/>
@@ -69,7 +112,9 @@
                 </LinearGradientBrush>
             </GridSplitter.Background>
         </GridSplitter>
-        <Button x:Name="button1" Content="Sound 1" HorizontalAlignment="Left" Margin="281,25,0,0" VerticalAlignment="Top" Width="51" Height="49" Click="button1_Click"/>
-        <Button x:Name="button2" Content="Sound 2" HorizontalAlignment="Left" Margin="366,25,0,0" VerticalAlignment="Top" Width="51" Height="49" Click="button2_Click"/>
+        <Button x:Name="button1" Content="Sound 1" HorizontalAlignment="Left" Margin="281,25,0,0" 
+                VerticalAlignment="Top" Width="51" Height="49" Command="{StaticResource playSound1Command}"/>
+        <Button x:Name="button2" Content="Sound 2" HorizontalAlignment="Left" Margin="366,25,0,0"
+                VerticalAlignment="Top" Width="51" Height="49" Command="{StaticResource playSound2Command}"/>
     </Grid>
 </Window>

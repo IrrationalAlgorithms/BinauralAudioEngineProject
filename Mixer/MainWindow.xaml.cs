@@ -16,17 +16,35 @@ using Microsoft.DirectX.DirectSound;
 using Microsoft.DirectX.Direct3D;
 using System.Windows.Interop;
 using System.Windows.Forms;
+using System.ComponentModel;
 
 namespace Mixer
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window { 
+    public partial class MainWindow : Window, INotifyPropertyChanged
+    {
 
         private SoundGenerator.SineGenerator _generator;
         private SoundGenerator.WavWorker _wavWorker;
 
+        private string _mode;
+        public string Mode
+        {
+            get { return _mode; }
+            set
+            {
+                _mode = value;
+                OnPropertyChanged("Mode");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
         public MainWindow()
         {
             InitializeComponent();
@@ -37,74 +55,71 @@ namespace Mixer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            RoutedCommand dowmCommand = new RoutedCommand();
-            dowmCommand.InputGestures.Add(new KeyGesture(Key.Down));
-            CommandBindings.Add(new CommandBinding(dowmCommand, rateUp));
-            dowmCommand.InputGestures.Add(new KeyGesture(Key.Up));
-            CommandBindings.Add(new CommandBinding(dowmCommand, rateDown));
-
-            RoutedCommand dowmCommand2 = new RoutedCommand();
-            dowmCommand2.InputGestures.Add(new KeyGesture(Key.Left));
-            CommandBindings.Add(new CommandBinding(dowmCommand2, button1_Click));
-
-            RoutedCommand dowmCommand3 = new RoutedCommand();
-            dowmCommand3.InputGestures.Add(new KeyGesture(Key.Right));
-            CommandBindings.Add(new CommandBinding(dowmCommand3, button2_Click));
+            Mode = "Start";
+            InitializeComponent();
+            DataContext = this;
         }
 
-        private void rateUp(object sender, RoutedEventArgs e)
+        protected override void OnClosed(EventArgs e)
+        {
+            _generator.Close();
+            base.OnClosed(e);
+        }
+
+
+        private void RateUp(object sender, RoutedEventArgs e)
         {
             //handler code goes here.
-             _generator.AddValue(10);
+            _generator.AddValue(10);
 
         }
-        private void rateDown(object sender, RoutedEventArgs e)
+        private void RateDown(object sender, RoutedEventArgs e)
         {
             //handler code goes here.
-           _generator.AddValue(-10);
-            
+            _generator.AddValue(-10);
+
         }
 
-        private void ampUp(object sender, RoutedEventArgs e)
+        private void AmpUp(object sender, RoutedEventArgs e)
         {
             //handler code goes here.
             _generator.AddValueAmp(+10);
         }
 
-        private void ampDown(object sender, RoutedEventArgs e)
+        private void AmpDown(object sender, RoutedEventArgs e)
         {
             //handler code goes here.
             _generator.AddValueAmp(-10);
         }
 
-        private async void startStop(object sender, RoutedEventArgs e)
+        private void StartStop(object sender, RoutedEventArgs e)
         {
-            var btn = (System.Windows.Controls.Button)sender;
-            if (btn.Content.ToString() == "Start")
+
+            if (Mode == "Start")
             {
-                btn.Content = "Stop";
+                Mode = "Stop";
                 _generator.Play();
             }
             else
             {
-                btn.Content = "Start";
+                Mode = "Start";
                 _generator.Pause();
             }
         }
 
-        private void button_Click(object sender, RoutedEventArgs e)
+        private void Print(object sender, RoutedEventArgs e)
         {
             var log = _generator.PrintLog();
             foreach (var item in log)
                 listBox.Items.Add(item);
         }
 
-        private void button1_Click(object sender, RoutedEventArgs e)
+        private void PlaySound1(object sender, RoutedEventArgs e)
         {
             _wavWorker.PlayWav(SoundGenerator.WavSample.test);
         }
 
-        private void button2_Click(object sender, RoutedEventArgs e)
+        private void PlaySound2(object sender, RoutedEventArgs e)
         {
             _wavWorker.PlayWav(SoundGenerator.WavSample.alesis);
         }

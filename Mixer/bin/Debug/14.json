@@ -1,0 +1,14 @@
+[  
+   {  
+      "Elevation":90,
+      "Angle":0,
+      "Path":"\\Convolution\\elev90\\L90e000a.wav",
+      "Channel":0
+   },
+   {  
+      "Elevation":90,
+      "Angle":0,
+      "Path":"\\Convolution\\elev90\\R90e000a.wav",
+      "Channel":1
+   }
+]

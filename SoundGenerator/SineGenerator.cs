@@ -185,7 +185,7 @@ namespace SoundGenerator
                             float rightChannelVolume = (float) (angle + MAX_HORIZONATL_ANGLE_ABS/2)/
                                                        (HORIZONTAL_ANGLE_RANGE/2);
                             float leftChannelVolume = 1 - rightChannelVolume;
-                            _sourceVoice.SetChannelVolumes(2, new[] {leftChannelVolume, rightChannelVolume});
+                            _sourceVoice.SetChannelVolumes(2, new[] { rightChannelVolume, leftChannelVolume });
                         }
 
                         _sourceVoice.SubmitSourceBuffer(_audioBuffersRing[_nextBuffer], null);

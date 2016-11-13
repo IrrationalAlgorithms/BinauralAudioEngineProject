@@ -61,6 +61,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Sandbox.cs" />
     <Compile Include="SineGenerator.cs" />
     <Compile Include="Sound.cs" />
     <Compile Include="WavWorker.cs" />

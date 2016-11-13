@@ -3,21 +3,22 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Mixer"
+        xmlns:d3="http://research.microsoft.com/DynamicDataDisplay/1.0"
         mc:Ignorable="d"
         Title="HRTFWindow" Height="321.439" Width="652.737">
     <Grid>
-        <Button x:Name="Load" Content="Load" HorizontalAlignment="Left" Margin="18,19,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button x:Name="Load" Content="Load" HorizontalAlignment="Left" Margin="18,19,0,0" VerticalAlignment="Top" Width="75" Click="Load_Click"/>
         <Button x:Name="Play" Content="Play" HorizontalAlignment="Left" Margin="18,65,0,0" VerticalAlignment="Top" Width="75" Height="44" Click="Play_Click"/>
-        <Button x:Name="Stop" Content="Stop" HorizontalAlignment="Left" Margin="18,127,0,0" VerticalAlignment="Top" Width="75" Height="44" Click="Stop_Click"/>
-        <Button x:Name="Pause" Content="Pause" HorizontalAlignment="Left" Margin="18,189,0,0" VerticalAlignment="Top" Width="75" Height="44"/>
-        <Slider x:Name="HorizontalSlider" HorizontalAlignment="Left" Margin="126,215,0,0" VerticalAlignment="Top" Width="190" RenderTransformOrigin="0.462,0.575" TickFrequency="5" IsSnapToTickEnabled="True"
-                Minimum="-90" Maximum="90" ValueChanged="HorizontalSlider_ValueChanged"/>
-        <Slider x:Name="VerticalSlider" HorizontalAlignment="Left" Margin="321,19,0,0" VerticalAlignment="Top" Width="20" RenderTransformOrigin="0.462,0.575" Orientation="Vertical" Height="191"
-                Minimum="-40" Maximum="90" ValueChanged="VerticalSlider_ValueChanged"/>
-        <CheckBox x:Name="checkBox" Content="Apply convolution" HorizontalAlignment="Left" Margin="18,262,0,0" VerticalAlignment="Top"/>
-        <StackPanel x:Name="LeftHRTF" HorizontalAlignment="Left" Height="92" Margin="380,28,0,0" VerticalAlignment="Top" Width="220"/>
-        <StackPanel x:Name="RightHTRF" HorizontalAlignment="Left" Height="92" Margin="380,141,0,0" VerticalAlignment="Top" Width="220"/>
+        <Button x:Name="Stop" Content="Stop" HorizontalAlignment="Left" Margin="18,183,0,0" VerticalAlignment="Top" Width="75" Height="44" Click="Stop_Click"/>
+        <Button x:Name="Pause" Content="Pause" HorizontalAlignment="Left" Margin="18,124,0,0" VerticalAlignment="Top" Width="75" Height="44" Click="Pause_Click"/>
+        <Slider x:Name="AngleSlider" HorizontalAlignment="Left" Margin="126,215,0,0" VerticalAlignment="Top" Width="190" RenderTransformOrigin="0.462,0.575" TickFrequency="5" IsSnapToTickEnabled="True"
+                Minimum="-90" Maximum="90" ValueChanged="AngleSlider_ValueChanged"/>
+        <Slider x:Name="ElevationSlider" HorizontalAlignment="Left" Margin="321,19,0,0" VerticalAlignment="Top" Width="20" RenderTransformOrigin="0.462,0.575" TickFrequency="10" IsSnapToTickEnabled="True" 
+                Minimum="-40" Maximum="90" ValueChanged="ElevationSlider_ValueChanged" Orientation="Vertical" Height="191"/>
+        <CheckBox x:Name="ApplyConvolution" Content="Apply convolution" HorizontalAlignment="Left" Margin="18,262,0,0" VerticalAlignment="Top" Checked="checkBox_Checked" Unchecked="checkBox_Unchecked"/>
         <Canvas x:Name="HeadPicture" HorizontalAlignment="Left" Height="182" Margin="126,28,0,0" VerticalAlignment="Top" Width="190"/>
+        <Canvas x:Name="LeftHRTF" HorizontalAlignment="Left" Height="100" Margin="366,19,0,0" VerticalAlignment="Top" Width="248"/>
+        <Canvas x:Name="RightHRTF" HorizontalAlignment="Left" Height="100" Margin="366,133,0,0" VerticalAlignment="Top" Width="248"/>
+        <Label x:Name="label" Content="Label" HorizontalAlignment="Left" Margin="184,254,0,0" VerticalAlignment="Top" Width="330"/>
     </Grid>
 </Window>

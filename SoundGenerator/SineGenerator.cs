@@ -26,15 +26,15 @@ namespace SoundGenerator
         private ManualResetEventSlim _playEvent;
 
         private bool _isConvolutionOn;
-        private int _horizontalAngle;
-        private int _elevation;
+        private double _horizontalAngle;
+        private double _elevation;
 
         private List<string> _log;
 
         private int _valueRate;
         private float _valueAmp;
 
-        private const int MAX_HORIZONATL_ANGLE_ABS = 180;
+        private const double MAX_HORIZONATL_ANGLE_ABS = 180;
         private const int HORIZONTAL_ANGLE_RANGE = 360;
         private const int MAX_ELEVATION_ANGLE = 90;
         private const int MIN_ELEVATION_ANGLE = -40;
@@ -60,7 +60,7 @@ namespace SoundGenerator
 
             _bufferEndEvent = new AutoResetEvent(false);
 
-            _valueRate = 0;
+            _valueRate = 20;
             _valueAmp = 0.5f;
 
             _nextBuffer = 0;
@@ -97,7 +97,7 @@ namespace SoundGenerator
             _isConvolutionOn = isOn;
         }
 
-        public void SetHorizontalPosition(int angle)
+        public void SetHorizontalPosition(double angle)
         {
             _horizontalAngle = angle % MAX_HORIZONATL_ANGLE_ABS;
         }
@@ -181,7 +181,7 @@ namespace SoundGenerator
 
                         if (!_isConvolutionOn)
                         {
-                            var angle = _horizontalAngle%90;
+                            var angle = _horizontalAngle > 90 ? MAX_HORIZONATL_ANGLE_ABS - _horizontalAngle : _horizontalAngle;
                             float rightChannelVolume = (float) (angle + MAX_HORIZONATL_ANGLE_ABS/2)/
                                                        (HORIZONTAL_ANGLE_RANGE/2);
                             float leftChannelVolume = 1 - rightChannelVolume;

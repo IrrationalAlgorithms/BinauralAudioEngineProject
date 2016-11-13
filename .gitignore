@@ -4,3 +4,8 @@
 /SoundGenerator/obj/*
 /.vs/*
 /packages/*
+/SoundGenerator/packages.config
+/SoundGenerator/App.config
+/full.zip
+/Mixer/packages.config
+/Mixer/App.config

@@ -12,8 +12,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using Microsoft.DirectX.DirectSound;
-using Microsoft.DirectX.Direct3D;
 using System.Windows.Interop;
 using System.Windows.Forms;
 using System.ComponentModel;

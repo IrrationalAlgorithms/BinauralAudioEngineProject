@@ -13,8 +13,10 @@ namespace SoundGenerator
     class Convolution
     {
 
-        public DataStream leftConvolutionStream;
-        public DataStream rightConvolutionStream;
+        private DataStream _leftConvolutionStream;
+        private DataStream _rightConvolutionStream;
+        private float[] _leftTail;
+        private float[] _rightTail;
 
         public float elevation
         {
@@ -55,6 +57,15 @@ namespace SoundGenerator
             }
         }
 
+        private void prepareArrays(out float[] leftArray, out float[] rightArray)
+        {
+            var leftLength = (int)(_leftConvolutionStream.Length / sizeof(float));
+            leftArray = _leftConvolutionStream.ReadRange<float>(leftLength);
+
+            var rightLength = (int)(_rightConvolutionStream.Length / sizeof(float));
+            rightArray = _rightConvolutionStream.ReadRange<float>(rightLength);
+        }
+
       
 
         public Convolution()
@@ -64,16 +75,55 @@ namespace SoundGenerator
 
         public void SetConvolutionStreams(Stream left, Stream right)
         {
-            leftConvolutionStream = new SoundStream(left).ToDataStream();
-            rightConvolutionStream = new SoundStream(right).ToDataStream();
+            _leftConvolutionStream = new SoundStream(left).ToDataStream();
+            _rightConvolutionStream = new SoundStream(right).ToDataStream();
         }
         
-        private DataStream Calculate(float[] rightChannel, float[] leftChannel)
+        public float[] Calculate(float[] leftChannel, float[] rightChannel)
         {
-            var leftConvolutionLength = leftConvolutionStream.Length / (sizeof(float));
-            var rightConvolutionLength = rightConvolutionStream.Length / (sizeof(float));
-            var resultBuffer = new float[rightChannel.Length + leftChannel.Length];
-            return null;
+            float[] leftConvolutionFunc = null;
+            float[] rightConvolutionFunc = null;
+            prepareArrays(out leftConvolutionFunc, out rightConvolutionFunc);
+            float[] resultBuffer = new float[leftChannel.Length + rightChannel.Length];
+            float[] leftResultBuffer = null;
+            float[] rightResultBuffer = null;
+            var leftTask = Task.Factory.StartNew(() => _Calculate(leftChannel, leftConvolutionFunc, out leftResultBuffer, _leftTail));
+            var rightTask = Task.Factory.StartNew(() => _Calculate(rightChannel, rightConvolutionFunc, out rightResultBuffer, _rightTail));
+            leftTask.Wait();
+            rightTask.Wait();
+            for (int i = 0, k = 0; i < leftResultBuffer.Length; i++)
+            {
+                resultBuffer[k++] = leftResultBuffer[i];
+                resultBuffer[k++] = rightResultBuffer[i];
+            }
+            return resultBuffer;
+        }
+
+        private void _Calculate(float[] channel, float[] convolutionFunc, out float[] result, float[] tail)
+        {
+            result = new float[channel.Length];
+           double[] tmpBuff = new double[channel.Length + convolutionFunc.Length - 1];
+            if (tail != null)
+            {
+                for (int i = 0; i < tail.Length; i++)
+                {
+                    tmpBuff[i] += tail[i];
+                }
+            }
+            int offset = 0;
+            for (int i = 0; i < convolutionFunc.Length; i++)
+            {
+                for (int k = 0; k < channel.Length; k++)
+                {
+                    tmpBuff[offset + i] += (double)channel[k] * (double)convolutionFunc[i];
+                }
+                offset++;
+            }
+
+            tail = new float[convolutionFunc.Length - 1];
+            result = new float[channel.Length];
+            Array.Copy(tmpBuff, channel.Length - 1, tail, 0, tail.Length);
+            Array.Copy(tmpBuff, 0, result, 0, result.Length);
         }
     }
 }

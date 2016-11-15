@@ -14,28 +14,17 @@ namespace SoundGenerator
 {
     class AudioPlayer : IAudioPlayer
     {
-        private const int WaitPrecision = 1;
-        private XAudio2 xaudio2;
-        private AudioDecoder audioDecoder;
-        private SourceVoice sourceVoice;
-        private AudioBuffer[] audioBuffersRing;
-        private DataPointer[] memBuffers;
-        private Stopwatch clock;
-        private ManualResetEvent playEvent;
-        private ManualResetEvent waitForPlayToOutput;
-        private AutoResetEvent bufferEndEvent;
-        private TimeSpan playPosition;
-        private TimeSpan nextPlayPosition;
-        private TimeSpan playPositionStart;
-        private Task playingTask;
-        private int playCounter;
-        private float localVolume;
-        private bool IsDisposed;
-        private AudioDecoder leftConvolutionDecoder;
-        private SoundStream leftConvolutionStream;
-        private AudioDecoder rightConvolutionDecoder;
-        private SoundStream rightConvolutionStream;
-
+        private const int _WaitPrecision = 1;
+        private XAudio2 _xaudio2;
+        private AudioDecoder _audioDecoder;
+        private SourceVoice _sourceVoice;
+        private AudioBuffer[] _audioBuffersRing;
+        private DataPointer[] _memBuffers;
+        private ManualResetEvent _playEvent;
+        private AutoResetEvent _bufferEndEvent;
+        private Task _playingTask;
+        private bool _IsDisposed;
+        private Convolution _convolution;
 
         private bool _isConvolutionOn;
         private float _horizontalAngle;
@@ -51,51 +40,72 @@ namespace SoundGenerator
         /// <param name="audioStream">The input audio stream.</param>
         public AudioPlayer(XAudio2 xaudio2, Stream audioStream)
         {
-            this.xaudio2 = xaudio2;
-            audioDecoder = new AudioDecoder(audioStream);
-            sourceVoice = new SourceVoice(xaudio2, audioDecoder.WaveFormat);
-            localVolume = 1.0f;
+            _xaudio2 = xaudio2;
+            //_indDataStream = new SoundStream(audioStream).ToDataStream();
+            _audioDecoder = new AudioDecoder(audioStream);
+            _sourceVoice = new SourceVoice(xaudio2, _audioDecoder.WaveFormat);
 
-            var soundStream = new SoundStream(audioStream);
-            _indDataStream = soundStream.ToDataStream();
-            _bufferSize = audioDecoder.WaveFormat.ConvertLatencyToByteSize(7);
+            _bufferSize = _audioDecoder.WaveFormat.ConvertLatencyToByteSize(7);
 
             _isConvolutionOn = false;
             _horizontalAngle = 0f;
             _elevation = 0f;
-            leftConvolutionDecoder = null;
 
-            sourceVoice.BufferEnd += sourceVoice_BufferEnd;
-            sourceVoice.Start();
+            _sourceVoice.BufferEnd += sourceVoice_BufferEnd;
+            _sourceVoice.Start();
 
-            bufferEndEvent = new AutoResetEvent(false);
-            playEvent = new ManualResetEvent(false);
-            waitForPlayToOutput = new ManualResetEvent(false);
+            _bufferEndEvent = new AutoResetEvent(false);
+            _playEvent = new ManualResetEvent(false);
 
-            clock = new Stopwatch();
+            _convolution = new Convolution();
 
             // Pre-allocate buffers
-            audioBuffersRing = new AudioBuffer[3];
-            memBuffers = new DataPointer[audioBuffersRing.Length];
-            for (int i = 0; i < audioBuffersRing.Length; i++)
+            _audioBuffersRing = new AudioBuffer[3];
+            _memBuffers = new DataPointer[_audioBuffersRing.Length];
+            for (int i = 0; i < _audioBuffersRing.Length; i++)
             {
-                audioBuffersRing[i] = new AudioBuffer();
-                memBuffers[i].Size = 32 * 1024; // default size 32Kb
-                memBuffers[i].Pointer = Utilities.AllocateMemory(memBuffers[i].Size);
+                _audioBuffersRing[i] = new AudioBuffer();
+                _memBuffers[i].Size = 32 * 1024; // default size 32Kb
+                _memBuffers[i].Pointer = Utilities.AllocateMemory(_memBuffers[i].Size);
             }
 
             // Initialize to stopped
             State = PlayerState.Stopped;
 
             // Starts the playing thread
-            playingTask = Task.Factory.StartNew(PlayAsync, TaskCreationOptions.LongRunning);
+            _playingTask = Task.Factory.StartNew(PlayAsync, TaskCreationOptions.LongRunning);
+        }
+
+        public void SetConvolutionMode(bool isOn)
+        {
+            _isConvolutionOn = isOn;
+
+        }
+
+        public void SetConvolutionFunctions(Stream leftStream, Stream rightStream)
+        {
+
+            _convolution.SetConvolutionStreams(leftStream, rightStream);
+
+        }
+
+        public void SetHorizontalPosition(float angle)
+        {
+            _horizontalAngle = angle;
+            _convolution.horizontalPostion = angle;
+        }
+
+        public void SetElevation(float angle)
+        {
+            _elevation = angle;
+            _convolution.elevation = angle;
         }
 
         /// <summary>
         /// Gets the XAudio2 <see cref="SourceVoice"/> created by this decoder.
         /// </summary>
         /// <value>The source voice.</value>
-        public SourceVoice SourceVoice { get { return sourceVoice; } }
+        public SourceVoice SourceVoice { get { return _sourceVoice; } }
 
         /// <summary>
         /// Gets the state of this instance.
@@ -107,34 +117,7 @@ namespace SoundGenerator
         /// Gets the duration in seconds of the current sound.
         /// </summary>
         /// <value>The duration.</value>
-        public TimeSpan Duration
-        {
-            get { return audioDecoder.Duration; }
-        }
-
-        /// <summary>
-        /// Gets or sets the position in seconds.
-        /// </summary>
-        /// <value>The position.</value>
-        public TimeSpan Position
-        {
-            get { return playPosition; }
-            set
-            {
-                playPosition = value;
-                nextPlayPosition = value;
-                playPositionStart = value;
-                clock.Restart();
-                playCounter++;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether to the sound is looping when the end of the buffer is reached.
-        /// </summary>
-        /// <value><c>true</c> if to loop the sound; otherwise, <c>false</c>.</value>
-        public bool IsRepeating { get; set; }
-
+        
         /// <summary>
         /// Plays the sound.
         /// </summary>
@@ -142,65 +125,10 @@ namespace SoundGenerator
         {
             if (State != PlayerState.Playing)
             {
-                bool waitForFirstPlay = false;
-                if (State == PlayerState.Stopped)
-                {
-                    playCounter++;
-                    waitForPlayToOutput.Reset();
-                    waitForFirstPlay = true;
-                }
-                else
-                {
-                    // The song was paused
-                    clock.Start();
-                }
-
                 State = PlayerState.Playing;
-                playEvent.Set();
+                _playEvent.Set();
 
-                if (waitForFirstPlay)
-                {
-                    waitForPlayToOutput.WaitOne();
-                }
             }
-        }
-
-        /// <summary>
-        /// Gets or sets the volume.
-        /// </summary>
-        /// <value>The volume.</value>
-        public float Volume
-        {
-            get { return localVolume; }
-            set
-            {
-                localVolume = value;
-                sourceVoice.SetVolume(value);
-            }
-        }
-
-        public void SetConvolutionMode(bool isOn)
-        {
-            _isConvolutionOn = isOn;
-            
-        }
-
-        public void SetConvolutionFunctions(Stream leftStream, Stream rightStream)
-        {
-
-            leftConvolutionStream = new SoundStream(leftStream);
-            rightConvolutionDecoder = new AudioDecoder(rightStream);
-
-        }
-
-        public void SetHorizontalPosition(float angle)
-        {
-            _horizontalAngle = angle;
-        }
-
-        public void SetElevation(float angle)
-        {
-            _elevation = angle;
         }
 
         /// <summary>
@@ -210,9 +138,8 @@ namespace SoundGenerator
         {
             if (State == PlayerState.Playing)
             {
-                clock.Stop();
                 State = PlayerState.Paused;
-                playEvent.Reset();
+                _playEvent.Reset();
             }
         }
 
@@ -223,13 +150,8 @@ namespace SoundGenerator
         {
             if (State != PlayerState.Stopped)
             {
-                playPosition = TimeSpan.Zero;
-                nextPlayPosition = TimeSpan.Zero;
-                playPositionStart = TimeSpan.Zero;
-                clock.Stop();
-                playCounter++;
                 State = PlayerState.Stopped;
-                playEvent.Reset();
+                _playEvent.Reset();
             }
         }
 
@@ -242,7 +164,7 @@ namespace SoundGenerator
         public void Close()
         {
             Stop();
-            IsDisposed = true;
+            _IsDisposed = true;
             Wait();
         }
 
@@ -251,7 +173,7 @@ namespace SoundGenerator
         /// </summary>
         public void Wait()
         {
-            playingTask.Wait();
+            _playingTask.Wait();
         }
 
         /// <summary>
@@ -259,7 +181,6 @@ namespace SoundGenerator
         /// </summary>
         private void PlayAsync()
         {
-            int currentPlayCounter = 0;
             int nextBuffer = 0;
 
             try
@@ -267,57 +188,48 @@ namespace SoundGenerator
                 while (true)
                 {
                     // Check that this instanced is not disposed
-                    while (!IsDisposed)
+                    while (!_IsDisposed)
                     {
-                        if (playEvent.WaitOne(WaitPrecision))
+                        if (_playEvent.WaitOne(_WaitPrecision))
                             break;
                     }
 
-                    if (IsDisposed)
+                    if (_IsDisposed)
                         break;
 
-                    clock.Restart();
-                    playPositionStart = nextPlayPosition;
-                    playPosition = playPositionStart;
-                    currentPlayCounter = playCounter;
 
                     // Get the decoded samples from the specified starting position.
-                    var sampleIterator = audioDecoder.GetSamples(playPositionStart).GetEnumerator();
+                    var sampleIterator = _audioDecoder.GetSamples().GetEnumerator();
 
                     bool isFirstTime = true;
 
                     bool endOfSong = false;
                     int offset = 0;
-                    int read = 0;
+                    //var left = _indDataStream.Length;
+                    int numberOfSamples = _bufferSize / _audioDecoder.WaveFormat.BlockAlign;
                     // Playing all the samples
                     while (true)
                     {
                         // If the player is stopped or disposed, then break of this loop
-                        while (!IsDisposed && State != PlayerState.Stopped)
+                        while (!_IsDisposed && State != PlayerState.Stopped)
                         {
-                            if (playEvent.WaitOne(WaitPrecision))
+                            if (_playEvent.WaitOne(_WaitPrecision))
                                 break;
                         }
 
                         // If the player is stopped or disposed, then break of this loop
-                        if (IsDisposed || State == PlayerState.Stopped)
+                        if (_IsDisposed || State == PlayerState.Stopped)
                         {
-                            nextPlayPosition = TimeSpan.Zero;
                             break;
                         }
 
-                        // If there was a change in the play position, restart the sample iterator.
-                        if (currentPlayCounter != playCounter)
-                            break;
-
                         // If ring buffer queued is full, wait for the end of a buffer.
-                        while (sourceVoice.State.BuffersQueued == audioBuffersRing.Length && !IsDisposed && State != PlayerState.Stopped)
-                            bufferEndEvent.WaitOne(WaitPrecision);
+                        while (_sourceVoice.State.BuffersQueued == _audioBuffersRing.Length && !_IsDisposed && State != PlayerState.Stopped)
+                            _bufferEndEvent.WaitOne(_WaitPrecision);
 
                         // If the player is stopped or disposed, then break of this loop
-                        if (IsDisposed || State == PlayerState.Stopped)
+                        if (_IsDisposed || State == PlayerState.Stopped)
                         {
-                            nextPlayPosition = TimeSpan.Zero;
                             break;
                         }
 
@@ -327,68 +239,70 @@ namespace SoundGenerator
                             endOfSong = true;
                             break;
                         }
-                        
+
                         // Retrieve a pointer to the sample data
                         var bufferPointer = sampleIterator.Current;
+
                         var leftList = new List<float>();
                         var rightList = new List<float>();
-                        while (_indDataStream.CanRead && leftList.Count < _bufferSize)
+                        //if(left <= 0)
+                        //{
+                        //    endOfSong = true;
+                        //    break;
+                        //}
+                        //var count = left < numberOfSamples ? (int)left : numberOfSamples;
+                        //var bufferPointer = DataStream.Create(_indDataStream.ReadRange<float>(count),true,true);
+                        //left -= count;
+                        var dataStream = bufferPointer.ToDataStream();
+                        if (_isConvolutionOn)
                         {
-                            leftList.Add(_indDataStream.Read<float>());
-                            rightList.Add(_indDataStream.Read<float>());
-                        }
-                        
-                        //if(_isConvolutionOn)
-                        //    bufferPointer = convolution(bufferPointer);\
+                            //var trackLength = numberOfSamples / 2;
+                            var trackLength = bufferPointer.Size / (sizeof(float) * 2);
+                            while (leftList.Count < trackLength)
+                            {
+                                leftList.Add(dataStream.Read<float>());
+                                rightList.Add(dataStream.Read<float>());
+                            }
 
-                        // If there was a change in the play position, restart the sample iterator.
-                        if (currentPlayCounter != playCounter)
-                            break;
+
+                            var buffer = _convolution.Calculate(leftList.ToArray(), rightList.ToArray());
+                            bufferPointer = DataBuffer.Create(buffer);
+                            //bufferPointer = DataStream.Create(buffer, true, true);
+                        }
 
                         // Check that our ring buffer has enough space to store the audio buffer.
-                        if (bufferPointer.Size > memBuffers[nextBuffer].Size)
+                        if (bufferPointer.Size > _memBuffers[nextBuffer].Size)
                         {
-                            if (memBuffers[nextBuffer].Pointer != IntPtr.Zero)
-                                Utilities.FreeMemory(memBuffers[nextBuffer].Pointer);
+                            if (_memBuffers[nextBuffer].Pointer != IntPtr.Zero)
+                                Utilities.FreeMemory(_memBuffers[nextBuffer].Pointer);
 
-                            memBuffers[nextBuffer].Pointer = Utilities.AllocateMemory(bufferPointer.Size);
-                            memBuffers[nextBuffer].Size = bufferPointer.Size;
+                            _memBuffers[nextBuffer].Pointer = Utilities.AllocateMemory(_bufferSize);
+                            _memBuffers[nextBuffer].Size = (int)bufferPointer.Size;
                         }
 
                         // Copy the memory from MediaFoundation AudioDecoder to the buffer that is going to be played.
-                        Utilities.CopyMemory(memBuffers[nextBuffer].Pointer, bufferPointer.Pointer, bufferPointer.Size);
+                        Utilities.CopyMemory(_memBuffers[nextBuffer].Pointer, bufferPointer.Pointer, bufferPointer.Size);
 
                         // Set the pointer to the data.
-                        audioBuffersRing[nextBuffer].AudioDataPointer = memBuffers[nextBuffer].Pointer;
-                        audioBuffersRing[nextBuffer].AudioBytes = bufferPointer.Size;
+                        _audioBuffersRing[nextBuffer].AudioDataPointer = _memBuffers[nextBuffer].Pointer;
+                        _audioBuffersRing[nextBuffer].AudioBytes = bufferPointer.Size;
 
-                        // If this is a first play, restart the clock and notify play method.
-                        if (isFirstTime)
-                        {
-                            clock.Restart();
-                            isFirstTime = false;
-
-                            waitForPlayToOutput.Set();
-                        }
-
-                        // Update the current position used for sync
-                        playPosition = new TimeSpan(playPositionStart.Ticks + clock.Elapsed.Ticks);
                         if (_isConvolutionOn)
                         {
                            setLinearSound();
                         }
                         // Submit the audio buffer to xaudio2
-                        sourceVoice.SubmitSourceBuffer(audioBuffersRing[nextBuffer], null);
+                        _sourceVoice.SubmitSourceBuffer(_audioBuffersRing[nextBuffer], null);
 
                         // Go to next entry in the ringg audio buffer
-                        nextBuffer = ++nextBuffer % audioBuffersRing.Length;
+                        nextBuffer = ++nextBuffer % _audioBuffersRing.Length;
                     }
 
-                    // If the song is not looping (by default), then stop the audio player.
-                    if (endOfSong && !IsRepeating && State == PlayerState.Playing)
+                    if (endOfSong && State == PlayerState.Playing)
                     {
                         Stop();
                     }
+
                 }
             }
             finally
@@ -408,29 +322,29 @@ namespace SoundGenerator
             float rightChannelVolume = (float)(angle + Constants.MAX_HORIZONATL_ANGLE_ABS / 2) /
                                        (Constants.HORIZONTAL_ANGLE_RANGE / 2);
             float leftChannelVolume = 1 - rightChannelVolume;
-            sourceVoice.SetChannelVolumes(2, new[] { rightChannelVolume, leftChannelVolume });
+            _sourceVoice.SetChannelVolumes(2, new[] { rightChannelVolume, leftChannelVolume });
         }
 
       
 
         private void DisposePlayer()
         {
-            audioDecoder.Dispose();
-            audioDecoder = null;
+            _audioDecoder.Dispose();
+            _audioDecoder = null;
 
-            sourceVoice.Dispose();
-            sourceVoice = null;
+            _sourceVoice.Dispose();
+            _sourceVoice = null;
 
-            for (int i = 0; i < audioBuffersRing.Length; i++)
+            for (int i = 0; i < _audioBuffersRing.Length; i++)
             {
-                Utilities.FreeMemory(memBuffers[i].Pointer);
-                memBuffers[i].Pointer = IntPtr.Zero;
+                Utilities.FreeMemory(_memBuffers[i].Pointer);
+                _memBuffers[i].Pointer = IntPtr.Zero;
             }
         }
 
         void sourceVoice_BufferEnd(IntPtr obj)
         {
-            bufferEndEvent.Set();
+            _bufferEndEvent.Set();
         }
     }
 }

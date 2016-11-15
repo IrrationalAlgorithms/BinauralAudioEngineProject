@@ -88,7 +88,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="audioPlayer.cs" />
+    <Compile Include="AudioPlayer.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Convolution.cs" />
     <Compile Include="ConvolutionResourseReader.cs" />
@@ -103,7 +103,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConvolutionFile.cs" />
-    <Compile Include="PlayerState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

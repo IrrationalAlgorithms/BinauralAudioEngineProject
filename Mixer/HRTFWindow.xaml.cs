@@ -1,5 +1,7 @@
 ﻿using SoundGenerator;
 using System;
+using System.IO;
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +16,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Microsoft.Win32;
 using SharpDX.IO;
-using SharpDX.Multimedia;
+using SharpDX;
+using SharpDX.XAudio2;
+using SharpDX.MediaFoundation;
 
 namespace Mixer
 {
@@ -23,16 +27,24 @@ namespace Mixer
     /// </summary>
     public partial class HRTFWindow : Window
     {
-        double _offsetX;
-        double _offsetY;
-        Ellipse _ellipse;
-        SineGenerator _generator;
+        private double _offsetX;
+        private double _offsetY;
+        private Ellipse _ellipse;
+        private SineGenerator _generator;
+        private AudioPlayer _audioPlayer;
+        private Stream _fileStream;
+        private MasteringVoice _masteringVoice;
+        private XAudio2 _xaudio2;
+        private object _lockAudio = new object();
+        private bool _isConvolutionOn;
 
         public HRTFWindow()
         {
             InitializeComponent();
             _generator = new SineGenerator();
 
+            _isConvolutionOn = false;
+            InitializeXAudio2();
             HeadPictureBackground();
             EllipseInitialization();
             HRTFInitialization(LeftHRTF);
@@ -49,7 +61,7 @@ namespace Mixer
 
             myGeometryDrawing.Geometry = rectangle;
             myDrawingBrush.Drawing = myGeometryDrawing;
-            
+
             HeadPicture.Background = myDrawingBrush;
         }
 
@@ -71,7 +83,7 @@ namespace Mixer
             GeometryDrawing myGeometryDrawing = new GeometryDrawing();
             myGeometryDrawing.Pen = new Pen(Brushes.DarkGray, 1);
             GeometryGroup rectangle = new GeometryGroup();
-            rectangle.Children.Add(new LineGeometry(new Point(0,0), new Point(100,100)));
+            rectangle.Children.Add(new LineGeometry(new Point(0, 0), new Point(100, 100)));
             rectangle.Children.Add(new RectangleGeometry(new Rect(new Point(0, 0), new Point(100, 100))));
 
             myGeometryDrawing.Geometry = rectangle;
@@ -123,19 +135,30 @@ namespace Mixer
             HeadPicture.Children.Add(_ellipse);
         }
 
-        private void Play_Click(object sender, RoutedEventArgs e)
-        {
-            _generator.AddValue(10);
-            _generator.Play();
-        }
 
         private void Load_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new OpenFileDialog { Title = "Select an audio file (wma, mp3, ...etc.) or video file..." };
             if (dialog.ShowDialog() == true)
             {
-                var fileStream = new NativeFileStream(dialog.FileName, NativeFileMode.Open, NativeFileAccess.Read);
-                var bytes = fileStream.ReadByte();
+                _fileStream = new NativeFileStream(dialog.FileName, NativeFileMode.Open, NativeFileAccess.Read, NativeFileShare.Read);
+
+                lock (_lockAudio)
+                {
+                    if (_audioPlayer != null)
+                    {
+                        _audioPlayer.Close();
+                        _audioPlayer = null;
+                    }
+
+
+                    _audioPlayer = new AudioPlayer(_xaudio2, _fileStream);
+                    _audioPlayer.SetConvolutionMode(_isConvolutionOn);
+                    if (_isConvolutionOn)
+                    {
+                        _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+                    }
+                }
                 //audioPlayer = new AudioPlayer(xaudio2, fileStream);
 
                 //FilePathTextBox.Text = dialog.FileName;
@@ -149,7 +172,34 @@ namespace Mixer
 
         private void Pause_Click(object sender, RoutedEventArgs e)
         {
-            _generator.Pause();
+            //_generator.Pause();
+            lock (_lockAudio)
+            {
+                if (_audioPlayer != null)
+                {
+                    if (_audioPlayer.State == PlayerState.Playing)
+                    {
+                        _audioPlayer.Pause();
+                    }
+                }
+            }
+        }
+
+        private void Play_Click(object sender, RoutedEventArgs e)
+        {
+            //_generator.AddValue(10);
+            //_generator.Play();
+            lock (_lockAudio)
+            {
+                if (_audioPlayer != null)
+                {
+                    if (_audioPlayer.State == PlayerState.Paused ||
+                        _audioPlayer.State == PlayerState.Stopped)
+                    {
+                        _audioPlayer.Play();
+                    }
+                }
+            }
         }
 
         private float ReadSoundBytes(string fileName)
@@ -167,18 +217,48 @@ namespace Mixer
 
         private void checkBox_Checked(object sender, RoutedEventArgs e)
         {
-            
-            Sandbox.ApplyConvolutionChecked(true);
-            Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+
+            //Sandbox.ApplyConvolutionChecked(true);
+            //Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+            _isConvolutionOn = true;
+            if (_audioPlayer != null)
+            {
+                _audioPlayer.SetConvolutionMode(_isConvolutionOn);
+                _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+            }
             label.Content = ($"{ElevationSlider.Value} ---- {AngleSlider.Value}");
         }
 
         private void checkBox_Unchecked(object sender, RoutedEventArgs e)
         {
+            _isConvolutionOn = false;
+            if(_audioPlayer != null)
+            {
+                _audioPlayer.SetConvolutionMode(_isConvolutionOn);
+            }
             Sandbox.ApplyConvolutionChecked(false);
         }
 
         private NativeFileStream GetFileStream(Channel channel) => new NativeFileStream
             (ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value, (int)AngleSlider.Value, channel), NativeFileMode.Open, NativeFileAccess.Read);
+
+        protected override void OnClosed(EventArgs e)
+        {
+            Utilities.Dispose(ref _masteringVoice);
+            Utilities.Dispose(ref _xaudio2);
+            base.OnClosed(e);
+
+        }
+
+        private void InitializeXAudio2()
+        {
+            // This is mandatory when using any of SharpDX.MediaFoundation classes
+            MediaManager.Startup();
+
+            // Starts The XAudio2 engine
+            _xaudio2 = new XAudio2();
+            _xaudio2.StartEngine();
+            _masteringVoice = new MasteringVoice(_xaudio2);
+        }
     }
 }

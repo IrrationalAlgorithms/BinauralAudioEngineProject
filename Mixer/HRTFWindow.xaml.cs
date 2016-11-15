@@ -44,17 +44,35 @@ namespace Mixer
         private void ChartInit()
         {
             // Все графики находятся в пределах области построения ChartArea, создадим ее
-            chart.ChartAreas.Add(new ChartArea("Default"));
+            chartR.ChartAreas.Add(new ChartArea("Default"));
 
             // Добавим линию, и назначим ее в ранее созданную область "Default"
-            chart.Series.Add(new Series("Series1"));
-            chart.Series["Series1"].ChartArea = "Default";
-            chart.Series["Series1"].ChartType = SeriesChartType.Line;
+            chartR.Series.Add(new Series("Series1"));
+            chartR.Series["Series1"].ChartArea = "Default";
+            chartR.Series["Series1"].ChartType = SeriesChartType.Line;
 
-            chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
-            chart.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
-            chart.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
-            chart.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
+            chartR.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
+            chartR.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
+            chartR.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
+            chartR.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
+
+            // Все графики находятся в пределах области построения ChartArea, создадим ее
+            chartL.ChartAreas.Add(new ChartArea("Default"));
+
+            // Добавим линию, и назначим ее в ранее созданную область "Default"
+            chartL.Series.Add(new Series("Series1"));
+            chartL.Series["Series1"].ChartArea = "Default";
+            chartL.Series["Series1"].ChartType = SeriesChartType.Line;
+
+            chartL.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
+            chartL.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
+            chartL.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
+            chartL.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
+
+            chartL.ChartAreas[0].AxisY.Maximum = 100;
+            chartL.ChartAreas[0].AxisY.Minimum = -100;
+            chartR.ChartAreas[0].AxisY.Maximum = 100;
+            chartR.ChartAreas[0].AxisY.Minimum = -100;
         }
 
         private void HeadPictureBackground()
@@ -96,7 +114,9 @@ namespace Mixer
             {
                 Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
                 ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
-                    (int)AngleSlider.Value, Channel.Left));
+                    (int)AngleSlider.Value, Channel.Left), Channel.Left);
+                ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
+                  (int)AngleSlider.Value, Channel.Right), Channel.Right);
                 label.Content = ($"{ElevationSlider.Value} ---- {AngleSlider.Value}");
             }
         }
@@ -111,6 +131,10 @@ namespace Mixer
             if (ApplyConvolution.IsChecked == true)
             {
                 Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+                ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
+                  (int)AngleSlider.Value, Channel.Left), Channel.Left);
+                ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
+                  (int)AngleSlider.Value, Channel.Right), Channel.Right);
                 label.Content = ($"{ElevationSlider.Value} ---- {AngleSlider.Value}");
             }
         }
@@ -157,40 +181,51 @@ namespace Mixer
             _generator.Pause();
         }
 
-        private void ReadSoundBytes(string fileName)
+        private void ReadSoundBytes(string fileName, Channel channel)
         {
-            chart.Series[0].Points.Clear();
+            //var audiodec = new AudioDecoder(fileStream);
+            //var enumerator = audiodec.GetSamples().GetEnumerator();
+
+            //List<float> arr = new List<float>();
+            //while (enumerator.MoveNext())
+            //{
+            //    var curr= enumerator.Current;
+            //    var dataS = curr.ToDataStream();
+            //    var lenght = dataS.Length / sizeof(float);
+            //    while (arr.Count != lenght)
+            //        arr.Add(dataS.Read<float>());
+            //}
+
+            
             var fileStream = new NativeFileStream(fileName, NativeFileMode.Open, NativeFileAccess.Read);
             var soundStream = new SoundStream(fileStream);
             var dataStream = soundStream.ToDataStream();
             int k = 1;
-            int counter = 0;
-            List<double> test = new List<double>();
-            test.Add(Math.Pow(10,36));
-            test.Add(1);
-            while (dataStream.Length > k)
-            {
-                 counter++; 
-                   test[1] = double.Parse(dataStream.Read<float>().ToString("G10"));
-                if (counter > 100) break;
-                if (double.IsNaN(test[1]))
-                {
-                    test[1] = test[0];
-                }
-                if (test[1] < 0)
-                {
+            List<float> test = new List<float>();
+            List<float> test2 = new List<float>();
+            List<float> test3 = new List<float>();
+            test.Add(0);
+            test.Add(0);
+            if (channel == Channel.Right)
+                chartR.Series[0].Points.Clear();
+            else
+                chartL.Series[0].Points.Clear();
 
-                }
-                var a = Math.Log10(test[1]);
-                if (a < 0)
+            while (dataStream.Length / sizeof(float) > k)
+            {
+                test[1] = dataStream.Read<float>();
+                Byte[] bytes = BitConverter.GetBytes(test[1]);
+             //   Array.Reverse(bytes);
+                test[1] = BitConverter.ToSingle(bytes, 0);
+                if (!double.IsNaN(test[1]))
                 {
-                    if (test[1] != 0)
-                    {
-                        chart.Series[0].Points.AddY((1 / test[1]) / Math.Pow(10, 20));
-                    }
-                }
-                else
-                    chart.Series[0].Points.AddY(test[1] / Math.Pow(10, 19));
+                    test2.Add(test[1]);
+                    float y = (100 * test[1]) / float.MaxValue;
+                    if (channel == Channel.Right)
+                        chartR.Series[0].Points.AddY(y);
+                    else
+                        chartL.Series[0].Points.AddY(y);
+                }                    
                 k++;
             }
         }

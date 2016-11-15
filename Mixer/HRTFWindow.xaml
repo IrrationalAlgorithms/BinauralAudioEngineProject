@@ -5,13 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d3="http://research.microsoft.com/DynamicDataDisplay/1.0"
         mc:Ignorable="d"
-        Title="HRTFWindow" Height="321.439" Width="730.737"
+        Title="HRTFWindow" Height="327.439" Width="730.737"
         xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
         xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         xmlns:dvc="clr-namespace:System.Windows.Forms.DataVisualization.Charting;assembly=System.Windows.Forms.DataVisualization">
     <Grid>
-        <WindowsFormsHost Margin="346,0,10,80">
-            <dvc:Chart x:Name="chart" />
+        <WindowsFormsHost Margin="346,19,10,146">
+            <dvc:Chart x:Name="chartR" />
+        </WindowsFormsHost>
+        <WindowsFormsHost Margin="346,155,10,6">
+            <dvc:Chart x:Name="chartL" />
         </WindowsFormsHost>
         <Button x:Name="Load" Content="Load" HorizontalAlignment="Left" Margin="18,19,0,0" VerticalAlignment="Top" Width="75" Click="Load_Click"/>
         <Button x:Name="Play" Content="Play" HorizontalAlignment="Left" Margin="18,65,0,0" VerticalAlignment="Top" Width="75" Height="44" Click="Play_Click"/>
@@ -24,8 +27,5 @@
         <CheckBox x:Name="ApplyConvolution" Content="Apply convolution" HorizontalAlignment="Left" Margin="18,262,0,0" VerticalAlignment="Top" Checked="checkBox_Checked" Unchecked="checkBox_Unchecked"/>
         <Canvas x:Name="HeadPicture" HorizontalAlignment="Left" Height="182" Margin="126,28,0,0" VerticalAlignment="Top" Width="190"/>
         <Label x:Name="label" Content="Label" HorizontalAlignment="Left" Margin="184,254,0,0" VerticalAlignment="Top" Width="330"/>
-        <WindowsFormsHost Margin="346,254,10,-78">
-            <dvc:Chart x:Name="chart1" />
-        </WindowsFormsHost>
     </Grid>
 </Window>

@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Microsoft.Win32;
+using System.Windows.Forms.DataVisualization.Charting;
 using SharpDX.IO;
 using SharpDX.Multimedia;
 
@@ -27,16 +28,33 @@ namespace Mixer
         double _offsetY;
         Ellipse _ellipse;
         SineGenerator _generator;
+        List<double> leftHRTF_X;
 
         public HRTFWindow()
         {
             InitializeComponent();
             _generator = new SineGenerator();
+            leftHRTF_X = new List<double>();
 
             HeadPictureBackground();
             EllipseInitialization();
-            HRTFInitialization(LeftHRTF);
-            HRTFInitialization(RightHRTF);
+            ChartInit();
+        }
+
+        private void ChartInit()
+        {
+            // Все графики находятся в пределах области построения ChartArea, создадим ее
+            chart.ChartAreas.Add(new ChartArea("Default"));
+
+            // Добавим линию, и назначим ее в ранее созданную область "Default"
+            chart.Series.Add(new Series("Series1"));
+            chart.Series["Series1"].ChartArea = "Default";
+            chart.Series["Series1"].ChartType = SeriesChartType.Line;
+
+            chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
+            chart.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
+            chart.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
+            chart.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
         }
 
         private void HeadPictureBackground()
@@ -65,21 +83,6 @@ namespace Mixer
             EllipseRedrow(_offsetY, _offsetX);
         }
 
-        private void HRTFInitialization(Canvas hrtfWindow)
-        {
-            DrawingBrush myDrawingBrush = new DrawingBrush();
-            GeometryDrawing myGeometryDrawing = new GeometryDrawing();
-            myGeometryDrawing.Pen = new Pen(Brushes.DarkGray, 1);
-            GeometryGroup rectangle = new GeometryGroup();
-            rectangle.Children.Add(new LineGeometry(new Point(0,0), new Point(100,100)));
-            rectangle.Children.Add(new RectangleGeometry(new Rect(new Point(0, 0), new Point(100, 100))));
-
-            myGeometryDrawing.Geometry = rectangle;
-            myDrawingBrush.Drawing = myGeometryDrawing;
-
-            hrtfWindow.Background = myDrawingBrush;
-        }
-
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
         }
@@ -92,6 +95,8 @@ namespace Mixer
             if (ApplyConvolution.IsChecked == true)
             {
                 Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+                ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
+                    (int)AngleSlider.Value, Channel.Left));
                 label.Content = ($"{ElevationSlider.Value} ---- {AngleSlider.Value}");
             }
         }
@@ -152,17 +157,42 @@ namespace Mixer
             _generator.Pause();
         }
 
-        private float ReadSoundBytes(string fileName)
+        private void ReadSoundBytes(string fileName)
         {
-            //var fileStream = new NativeFileStream(fileName, NativeFileMode.Open, NativeFileAccess.Read);
-            //var soundStream = new SoundStream(fileStream);
-            //var dataStream = soundStream.ToDataStream();
-            //while (dataStream.CanRead)
-            //{
-            //    dataStream.Read<float>();
-            //}
+            chart.Series[0].Points.Clear();
+            var fileStream = new NativeFileStream(fileName, NativeFileMode.Open, NativeFileAccess.Read);
+            var soundStream = new SoundStream(fileStream);
+            var dataStream = soundStream.ToDataStream();
+            int k = 1;
+            int counter = 0;
+            List<double> test = new List<double>();
+            test.Add(Math.Pow(10,36));
+            test.Add(1);
+            while (dataStream.Length > k)
+            {
+                 counter++; 
+                   test[1] = double.Parse(dataStream.Read<float>().ToString("G10"));
+                if (counter > 100) break;
+                if (double.IsNaN(test[1]))
+                {
+                    test[1] = test[0];
+                }
+                if (test[1] < 0)
+                {
 
-            throw new NotImplementedException();
+                }
+                var a = Math.Log10(test[1]);
+                if (a < 0)
+                {
+                    if (test[1] != 0)
+                    {
+                        chart.Series[0].Points.AddY((1 / test[1]) / Math.Pow(10, 20));
+                    }
+                }
+                else
+                    chart.Series[0].Points.AddY(test[1] / Math.Pow(10, 19));
+                k++;
+            }
         }
 
         private void checkBox_Checked(object sender, RoutedEventArgs e)

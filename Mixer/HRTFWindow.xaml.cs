@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Microsoft.Win32;
+using System.Windows.Forms.DataVisualization.Charting;
 using SharpDX.IO;
 using SharpDX;
 using SharpDX.XAudio2;
@@ -42,13 +43,47 @@ namespace Mixer
         {
             InitializeComponent();
             _generator = new SineGenerator();
+            leftHRTF_X = new List<double>();
 
             _isConvolutionOn = false;
             InitializeXAudio2();
             HeadPictureBackground();
             EllipseInitialization();
-            HRTFInitialization(LeftHRTF);
-            HRTFInitialization(RightHRTF);
+            ChartInit();
+        }
+
+        private void ChartInit()
+        {
+            // Все графики находятся в пределах области построения ChartArea, создадим ее
+            chartR.ChartAreas.Add(new ChartArea("Default"));
+
+            // Добавим линию, и назначим ее в ранее созданную область "Default"
+            chartR.Series.Add(new Series("Series1"));
+            chartR.Series["Series1"].ChartArea = "Default";
+            chartR.Series["Series1"].ChartType = SeriesChartType.Line;
+
+            chartR.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
+            chartR.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
+            chartR.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
+            chartR.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
+
+            // Все графики находятся в пределах области построения ChartArea, создадим ее
+            chartL.ChartAreas.Add(new ChartArea("Default"));
+
+            // Добавим линию, и назначим ее в ранее созданную область "Default"
+            chartL.Series.Add(new Series("Series1"));
+            chartL.Series["Series1"].ChartArea = "Default";
+            chartL.Series["Series1"].ChartType = SeriesChartType.Line;
+
+            chartL.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
+            chartL.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
+            chartL.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
+            chartL.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
+
+            chartL.ChartAreas[0].AxisY.Maximum = 100;
+            chartL.ChartAreas[0].AxisY.Minimum = -100;
+            chartR.ChartAreas[0].AxisY.Maximum = 100;
+            chartR.ChartAreas[0].AxisY.Minimum = -100;
         }
 
         private void HeadPictureBackground()
@@ -77,21 +112,6 @@ namespace Mixer
             EllipseRedrow(_offsetY, _offsetX);
         }
 
-        private void HRTFInitialization(Canvas hrtfWindow)
-        {
-            DrawingBrush myDrawingBrush = new DrawingBrush();
-            GeometryDrawing myGeometryDrawing = new GeometryDrawing();
-            myGeometryDrawing.Pen = new Pen(Brushes.DarkGray, 1);
-            GeometryGroup rectangle = new GeometryGroup();
-            rectangle.Children.Add(new LineGeometry(new Point(0, 0), new Point(100, 100)));
-            rectangle.Children.Add(new RectangleGeometry(new Rect(new Point(0, 0), new Point(100, 100))));
-
-            myGeometryDrawing.Geometry = rectangle;
-            myDrawingBrush.Drawing = myGeometryDrawing;
-
-            hrtfWindow.Background = myDrawingBrush;
-        }
-
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
         }
@@ -104,6 +124,10 @@ namespace Mixer
             if (ApplyConvolution.IsChecked == true)
             {
                 Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+                ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
+                    (int)AngleSlider.Value, Channel.Left), Channel.Left);
+                ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
+                  (int)AngleSlider.Value, Channel.Right), Channel.Right);
                 label.Content = ($"{ElevationSlider.Value} ---- {AngleSlider.Value}");
             }
         }
@@ -118,6 +142,10 @@ namespace Mixer
             if (ApplyConvolution.IsChecked == true)
             {
                 Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+                ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
+                  (int)AngleSlider.Value, Channel.Left), Channel.Left);
+                ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
+                  (int)AngleSlider.Value, Channel.Right), Channel.Right);
                 label.Content = ($"{ElevationSlider.Value} ---- {AngleSlider.Value}");
             }
         }
@@ -204,15 +232,51 @@ namespace Mixer
 
         private float ReadSoundBytes(string fileName)
         {
-            //var fileStream = new NativeFileStream(fileName, NativeFileMode.Open, NativeFileAccess.Read);
-            //var soundStream = new SoundStream(fileStream);
-            //var dataStream = soundStream.ToDataStream();
-            //while (dataStream.CanRead)
+            //var audiodec = new AudioDecoder(fileStream);
+            //var enumerator = audiodec.GetSamples().GetEnumerator();
+
+            //List<float> arr = new List<float>();
+            //while (enumerator.MoveNext())
             //{
-            //    dataStream.Read<float>();
+            //    var curr= enumerator.Current;
+            //    var dataS = curr.ToDataStream();
+            //    var lenght = dataS.Length / sizeof(float);
+            //    while (arr.Count != lenght)
+            //        arr.Add(dataS.Read<float>());
             //}
 
-            throw new NotImplementedException();
+            
+            var fileStream = new NativeFileStream(fileName, NativeFileMode.Open, NativeFileAccess.Read);
+            var soundStream = new SoundStream(fileStream);
+            var dataStream = soundStream.ToDataStream();
+            int k = 1;
+            List<float> test = new List<float>();
+            List<float> test2 = new List<float>();
+            List<float> test3 = new List<float>();
+            test.Add(0);
+            test.Add(0);
+            if (channel == Channel.Right)
+                chartR.Series[0].Points.Clear();
+            else
+                chartL.Series[0].Points.Clear();
+
+            while (dataStream.Length / sizeof(float) > k)
+            {
+                test[1] = dataStream.Read<float>();
+                Byte[] bytes = BitConverter.GetBytes(test[1]);
+             //   Array.Reverse(bytes);
+                test[1] = BitConverter.ToSingle(bytes, 0);
+                if (!double.IsNaN(test[1]))
+                {
+                    test2.Add(test[1]);
+                    float y = (100 * test[1]) / float.MaxValue;
+                    if (channel == Channel.Right)
+                        chartR.Series[0].Points.AddY(y);
+                    else
+                        chartL.Series[0].Points.AddY(y);
+                }                    
+                k++;
+            }
         }
 
         private void checkBox_Checked(object sender, RoutedEventArgs e)

@@ -25,7 +25,7 @@ namespace Mixer
 
         public static string GetSoundPath(int elevation, int angle, Channel channel)
         {
-            var fileElevation = _files.Value.Where(x => x.Elevation == elevation);
+            var fileElevation = _files.Value.Where(x => x.Elevation == elevation && x.Channel == channel);
             int max = Int32.MinValue;
             var maxPath = String.Empty;
             int min = Int32.MaxValue;

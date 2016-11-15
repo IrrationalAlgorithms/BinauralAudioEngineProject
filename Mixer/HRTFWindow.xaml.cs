@@ -116,6 +116,7 @@ namespace Mixer
 
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
+            _audioPlayer.Stop();
         }
 
         private void AngleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -189,20 +190,11 @@ namespace Mixer
                         _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
                     }
                 }
-                //audioPlayer = new AudioPlayer(xaudio2, fileStream);
-
-                //FilePathTextBox.Text = dialog.FileName;
-                //SoundProgressBar.Maximum = audioPlayer.Duration.TotalSeconds;
-                //SoundProgressBar.Value = 0;
-
-                //// Auto-play
-                //audioPlayer.Play();
             }
         }
 
         private void Pause_Click(object sender, RoutedEventArgs e)
         {
-            //_generator.Pause();
             lock (_lockAudio)
             {
                 if (_audioPlayer != null)
@@ -217,8 +209,6 @@ namespace Mixer
 
         private void Play_Click(object sender, RoutedEventArgs e)
         {
-            //_generator.AddValue(10);
-            //_generator.Play();
             lock (_lockAudio)
             {
                 if (_audioPlayer != null)
@@ -234,25 +224,12 @@ namespace Mixer
 
         private void ReadSoundBytes(string fileName, Channel channel)
         {
-            //var audiodec = new AudioDecoder(fileStream);
-            //var enumerator = audiodec.GetSamples().GetEnumerator();
-
-            //List<float> arr = new List<float>();
-            //while (enumerator.MoveNext())
-            //{
-            //    var curr= enumerator.Current;
-            //    var dataS = curr.ToDataStream();
-            //    var lenght = dataS.Length / sizeof(float);
-            //    while (arr.Count != lenght)
-            //        arr.Add(dataS.Read<float>());
-            //}
-
-
             var fileStream = new NativeFileStream(fileName, NativeFileMode.Open, NativeFileAccess.Read);
+
             var soundStream = new SoundStream(fileStream);
             var dataStream = soundStream.ToDataStream();
             int k = 1;
-            List<float> test = new List<float>();
+            List<short> test = new List<short>();
             List<float> test2 = new List<float>();
             List<float> test3 = new List<float>();
             test.Add(0);
@@ -262,21 +239,18 @@ namespace Mixer
             else
                 chartL.Series[0].Points.Clear();
 
-            while (dataStream.Length / sizeof(float) > k)
+            while (dataStream.Length / sizeof(short) > k)
             {
-                test[1] = dataStream.Read<float>();
-                Byte[] bytes = BitConverter.GetBytes(test[1]);
-                //   Array.Reverse(bytes);
-                test[1] = BitConverter.ToSingle(bytes, 0);
-                if (!double.IsNaN(test[1]))
-                {
-                    test2.Add(test[1]);
-                    float y = (100 * test[1]) / float.MaxValue;
-                    if (channel == Channel.Right)
-                        chartR.Series[0].Points.AddY(y);
-                    else
-                        chartL.Series[0].Points.AddY(y);
-                }
+                byte[] bytess = new byte[4];
+                test[1] = dataStream.Read<short>();
+                
+                test2.Add(test[1]);
+                var y = (100 * test[1]) /short.MaxValue;
+                if (channel == Channel.Right)
+                    chartR.Series[0].Points.AddY(y);
+                else
+                    chartL.Series[0].Points.AddY(y);
+                
                 k++;
             }
         }
@@ -293,6 +267,10 @@ namespace Mixer
                 _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
             }
             label.Content = ($"{ElevationSlider.Value} ---- {AngleSlider.Value}");
+            ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
+                (int)AngleSlider.Value, Channel.Left), Channel.Left);
+            ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
+              (int)AngleSlider.Value, Channel.Right), Channel.Right);
         }
 
         private void checkBox_Unchecked(object sender, RoutedEventArgs e)

@@ -19,6 +19,7 @@ using System.Windows.Forms.DataVisualization.Charting;
 using SharpDX.IO;
 using SharpDX;
 using SharpDX.XAudio2;
+using SharpDX.Multimedia;
 using SharpDX.MediaFoundation;
 
 namespace Mixer
@@ -38,6 +39,7 @@ namespace Mixer
         private XAudio2 _xaudio2;
         private object _lockAudio = new object();
         private bool _isConvolutionOn;
+        List<double> leftHRTF_X;
 
         public HRTFWindow()
         {
@@ -230,7 +232,7 @@ namespace Mixer
             }
         }
 
-        private float ReadSoundBytes(string fileName)
+        private void ReadSoundBytes(string fileName, Channel channel)
         {
             //var audiodec = new AudioDecoder(fileStream);
             //var enumerator = audiodec.GetSamples().GetEnumerator();
@@ -245,7 +247,7 @@ namespace Mixer
             //        arr.Add(dataS.Read<float>());
             //}
 
-            
+
             var fileStream = new NativeFileStream(fileName, NativeFileMode.Open, NativeFileAccess.Read);
             var soundStream = new SoundStream(fileStream);
             var dataStream = soundStream.ToDataStream();
@@ -264,7 +266,7 @@ namespace Mixer
             {
                 test[1] = dataStream.Read<float>();
                 Byte[] bytes = BitConverter.GetBytes(test[1]);
-             //   Array.Reverse(bytes);
+                //   Array.Reverse(bytes);
                 test[1] = BitConverter.ToSingle(bytes, 0);
                 if (!double.IsNaN(test[1]))
                 {
@@ -274,7 +276,7 @@ namespace Mixer
                         chartR.Series[0].Points.AddY(y);
                     else
                         chartL.Series[0].Points.AddY(y);
-                }                    
+                }
                 k++;
             }
         }

@@ -32,7 +32,7 @@ namespace Mixer
         private double _offsetX;
         private double _offsetY;
         private Ellipse _ellipse;
-        private SineGenerator _generator;
+        //private SineGenerator _generator;
         private AudioPlayer _audioPlayer;
         private Stream _fileStream;
         private MasteringVoice _masteringVoice;
@@ -44,7 +44,7 @@ namespace Mixer
         public HRTFWindow()
         {
             InitializeComponent();
-            _generator = new SineGenerator();
+            //_generator = new SineGenerator();
             leftHRTF_X = new List<double>();
 
             _isConvolutionOn = false;
@@ -122,9 +122,14 @@ namespace Mixer
         {
             _offsetX = GetXPercent(e.NewValue);
             EllipseRedrow(_offsetY, _offsetX);
-            _generator.SetHorizontalPosition(e.NewValue);
+            //_generator.SetHorizontalPosition(e.NewValue);
+            if (_audioPlayer != null)
+            {
+                _audioPlayer.SetHorizontalPosition((int)AngleSlider.Value);
+            }
             if (ApplyConvolution.IsChecked == true)
             {
+                _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
                 Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
                 ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
                     (int)AngleSlider.Value, Channel.Left), Channel.Left);
@@ -168,7 +173,7 @@ namespace Mixer
 
         private void Load_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog { Title = "Select an audio file (wma, mp3, ...etc.) or video file..." };
+            var dialog = new OpenFileDialog { Title = "Select an wav file..." };
             if (dialog.ShowDialog() == true)
             {
                 _fileStream = new NativeFileStream(dialog.FileName, NativeFileMode.Open, NativeFileAccess.Read, NativeFileShare.Read);
@@ -184,6 +189,7 @@ namespace Mixer
 
                     _audioPlayer = new AudioPlayer(_xaudio2, _fileStream);
                     _audioPlayer.SetConvolutionMode(_isConvolutionOn);
+                    _audioPlayer.SetHorizontalPosition((int)AngleSlider.Value);
                     if (_isConvolutionOn)
                     {
                         _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
@@ -289,8 +295,8 @@ namespace Mixer
             _isConvolutionOn = true;
             if (_audioPlayer != null)
             {
-                _audioPlayer.SetConvolutionMode(_isConvolutionOn);
                 _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+                _audioPlayer.SetConvolutionMode(_isConvolutionOn);
             }
             label.Content = ($"{ElevationSlider.Value} ---- {AngleSlider.Value}");
         }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SoundGenerator
+namespace Mixer
 {
     public static  class Constants
     {
@@ -13,5 +13,12 @@ namespace SoundGenerator
         public const float MAX_ELEVATION_ANGLE = 90f;
         public const float MIN_ELEVATION_ANGLE = -40f;
 
+    }
+
+    public enum PlayerState
+    {
+        Stopped,
+        Playing,
+        Paused,
     }
 }

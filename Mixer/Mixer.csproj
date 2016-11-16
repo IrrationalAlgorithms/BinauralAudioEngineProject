@@ -86,7 +86,6 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Utils.cs" />
-    <Compile Include="Wave16ToLeeeProvider.cs" />
     <Page Include="HRTFWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

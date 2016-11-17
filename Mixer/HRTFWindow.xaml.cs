@@ -116,7 +116,13 @@ namespace Mixer
 
         private void Stop_Click(object sender, RoutedEventArgs e)
         {
-            _audioPlayer.Stop();
+            lock (_lockAudio)
+            {
+                if (_audioPlayer != null)
+                {
+                    _audioPlayer.Stop();
+                }
+            }
         }
 
         private void AngleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -124,14 +130,22 @@ namespace Mixer
             _offsetX = GetXPercent(e.NewValue);
             EllipseRedrow(_offsetY, _offsetX);
             //_generator.SetHorizontalPosition(e.NewValue);
-            if (_audioPlayer != null)
+            lock (_lockAudio)
             {
-                _audioPlayer.SetHorizontalPosition((int)AngleSlider.Value);
+                if (_audioPlayer != null)
+                {
+                    _audioPlayer.SetHorizontalPosition((int)AngleSlider.Value);
+                }
             }
             if (ApplyConvolution.IsChecked == true)
             {
-                _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
-                Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+                lock (_lockAudio)
+                {
+                    if(_audioPlayer != null)
+                    {
+                        _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+                    }
+                }
                 ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
                     (int)AngleSlider.Value, Channel.Left), Channel.Left);
                 ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
@@ -149,7 +163,6 @@ namespace Mixer
             EllipseRedrow(_offsetY, _offsetX);
             if (ApplyConvolution.IsChecked == true)
             {
-                Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
                 ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
                   (int)AngleSlider.Value, Channel.Left), Channel.Left);
                 ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
@@ -177,17 +190,21 @@ namespace Mixer
             var dialog = new OpenFileDialog { Title = "Select an wav file..." };
             if (dialog.ShowDialog() == true)
             {
-                _fileStream = new NativeFileStream(dialog.FileName, NativeFileMode.Open, NativeFileAccess.Read, NativeFileShare.Read);
-
+                
                 lock (_lockAudio)
                 {
                     if (_audioPlayer != null)
                     {
-                        _audioPlayer.Close();
-                        _audioPlayer = null;
+                        //_audioPlayer.Close();
+                        //_audioPlayer = null;
                     }
 
+                    if (_fileStream != null)
+                    {
+                        _fileStream.Close();
+                    }
 
+                    _fileStream = new NativeFileStream(dialog.FileName, NativeFileMode.Open, NativeFileAccess.Read, NativeFileShare.Read);
                     _audioPlayer = new AudioPlayer(_xaudio2, _fileStream);
                     _audioPlayer.SetConvolutionMode(_isConvolutionOn);
                     _audioPlayer.SetHorizontalPosition((int)AngleSlider.Value);
@@ -264,13 +281,14 @@ namespace Mixer
         private void checkBox_Checked(object sender, RoutedEventArgs e)
         {
 
-            //Sandbox.ApplyConvolutionChecked(true);
-            //Sandbox.SetConvolution(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
             _isConvolutionOn = true;
-            if (_audioPlayer != null)
+            lock (_lockAudio)
             {
-                _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
-                _audioPlayer.SetConvolutionMode(_isConvolutionOn);
+                if (_audioPlayer != null)
+                {
+                    _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+                    _audioPlayer.SetConvolutionMode(_isConvolutionOn);
+                }
             }
             label.Content = ($"{ElevationSlider.Value} ---- {AngleSlider.Value}");
             ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
@@ -282,9 +300,12 @@ namespace Mixer
         private void checkBox_Unchecked(object sender, RoutedEventArgs e)
         {
             _isConvolutionOn = false;
-            if(_audioPlayer != null)
+            lock (_lockAudio)
             {
-                _audioPlayer.SetConvolutionMode(_isConvolutionOn);
+                if (_audioPlayer != null)
+                {
+                    _audioPlayer.SetConvolutionMode(_isConvolutionOn);
+                }
             }
             Sandbox.ApplyConvolutionChecked(false);
         }

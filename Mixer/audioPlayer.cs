@@ -16,9 +16,7 @@ namespace Mixer
     {
         private const int _WaitPrecision = 1;
         private XAudio2 _xaudio2;
-        //private AudioDecoder _audioDecoder;
-        private SourceVoice sourceVoice;
-        //private SourceVoice _floatWaveSourceVoice;
+        private SourceVoice _sourceVoice;
         private AudioBuffer[] _audioBuffersRing;
         private DataPointer[] _memBuffers;
         private ManualResetEvent _playEvent;
@@ -43,26 +41,21 @@ namespace Mixer
         public AudioPlayer(XAudio2 xaudio2, Stream audioStream)
         {
             _xaudio2 = xaudio2;
-            //_indDataStream = new SoundStream(audioStream).ToDataStream();
             var audioDecoder = new AudioDecoder(audioStream);
             audioStream.Seek(0, SeekOrigin.Begin);
             _indDataStream = ConverStreamToIeeeFloat(new SoundStream(audioStream).ToDataStream());
 
-            
-            //_floatWaveSourceVoice = new SourceVoice(xaudio2, waveFormat);
-
             _waveFormat = new WaveFormat(audioDecoder.WaveFormat.SampleRate, 32, audioDecoder.WaveFormat.Channels);
-            sourceVoice = new SourceVoice(xaudio2, _waveFormat);
+            audioDecoder.Dispose();
+            _sourceVoice = new SourceVoice(xaudio2, _waveFormat);
 
-            _bufferSize = _waveFormat.ConvertLatencyToByteSize(1000);
+            _bufferSize = _waveFormat.ConvertLatencyToByteSize(7);
             _isConvolutionOn = false;
             _horizontalAngle = 0f;
             _elevation = 0f;
 
-            sourceVoice.BufferEnd += sourceVoice_BufferEnd;
-            //_floatWaveSourceVoice.BufferEnd += sourceVoice_BufferEnd;
-            sourceVoice.Start();
-            //_floatWaveSourceVoice.Stop();
+            _sourceVoice.BufferEnd += sourceVoice_BufferEnd;
+            _sourceVoice.Start();
 
             _bufferEndEvent = new AutoResetEvent(false);
             _playEvent = new ManualResetEvent(false);
@@ -131,7 +124,7 @@ namespace Mixer
         /// Gets the XAudio2 <see cref="SourceVoice"/> created by this decoder.
         /// </summary>
         /// <value>The source voice.</value>
-        public SourceVoice SourceVoice { get { return sourceVoice; } }
+        public SourceVoice SourceVoice { get { return _sourceVoice; } }
 
         /// <summary>
         /// Gets the state of this instance.
@@ -223,11 +216,8 @@ namespace Mixer
                     if (_IsDisposed)
                         break;
 
-
-                    // Get the decoded samples from the specified starting position.
-                    //var sampleIterator = _audioDecoder.GetSamples().GetEnumerator();
                     _indDataStream.Seek(0, SeekOrigin.Begin);
-                    bool isFirstTime = true;
+
 
                     bool endOfSong = false;
                     var samplesLeft = _indDataStream.Length / _waveFormat.BlockAlign;
@@ -250,7 +240,7 @@ namespace Mixer
 
                         //If ring buffer queued is full, wait for the end of a buffer.
 
-                        while (sourceVoice.State.BuffersQueued == _audioBuffersRing.Length && !_IsDisposed && State != PlayerState.Stopped)
+                        while (_sourceVoice.State.BuffersQueued == _audioBuffersRing.Length && !_IsDisposed && State != PlayerState.Stopped)
                             _bufferEndEvent.WaitOne(_WaitPrecision);
 
 
@@ -260,16 +250,6 @@ namespace Mixer
                         {
                             break;
                         }
-
-                        // Check that there is a next sample
-                        //if (!sampleIterator.MoveNext())
-                        //{
-                        //    endOfSong = true;
-                        //    break;
-                        //}
-
-                        // Retrieve a pointer to the sample data
-                        //var bufferPointer = sampleIterator.Current;
 
                         var leftList = new List<float>();
                         var rightList = new List<float>();
@@ -282,11 +262,7 @@ namespace Mixer
                         var bufferSize = samplesCount * _waveFormat.BlockAlign;
                         var dataStream = DataStream.Create(_indDataStream.ReadRange<float>(samplesCount * 2), true, true);
                         samplesLeft -= samplesCount;
-                        //var dataStream = bufferPointer.ToDataStream();
-                        //var XbufferX = dataStream.ReadRange<short>((int)dataStream.Length / sizeof(short));
-                        //var trackLength = bufferPointer.Size / (sizeof(short) * 2);
-                        //dataStream.Seek(0, SeekOrigin.Begin);
-
+                        
                         float[] buffer;
                         while (leftList.Count < samplesCount)
                         {
@@ -295,9 +271,7 @@ namespace Mixer
                         }
                         if (_isConvolutionOn)
                         {
-                            //var trackLength = numberOfSamples / 2;
                             buffer = _convolution.Calculate(leftList.ToArray(), rightList.ToArray());
-                            //bufferPointer = DataStream.Create(buffer, true, true);
                         }
                         else
                         {
@@ -329,7 +303,7 @@ namespace Mixer
                         _audioBuffersRing[nextBuffer].AudioBytes = bufferSize;
 
                         // Submit the audio buffer to xaudio2
-                        sourceVoice.SubmitSourceBuffer(_audioBuffersRing[nextBuffer], null);
+                        _sourceVoice.SubmitSourceBuffer(_audioBuffersRing[nextBuffer], null);
 
                         // Go to next entry in the ringg audio buffer
                         nextBuffer = ++nextBuffer % _audioBuffersRing.Length;
@@ -348,25 +322,11 @@ namespace Mixer
             }
         }
 
-        private void setLinearSound(SourceVoice sourceVoice)
-        {
-
-            float rightChannelVolume = _horizontalAngle;
-            float leftChannelVolume = 1 - rightChannelVolume;
-            sourceVoice.SetChannelVolumes(2, new[] {leftChannelVolume, rightChannelVolume });
-        }
-
-      
-
         private void DisposePlayer()
         {
-            //_audioDecoder.Dispose();
-            //_audioDecoder = null;
 
-            sourceVoice.Dispose();
-            //_floatWaveSourceVoice.Dispose();
-            sourceVoice = null;
-            //_floatWaveSourceVoice = null;
+            _sourceVoice.Dispose();
+            _sourceVoice = null;
 
             for (int i = 0; i < _audioBuffersRing.Length; i++)
             {

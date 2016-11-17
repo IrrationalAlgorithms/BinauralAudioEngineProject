@@ -20,45 +20,6 @@ namespace Mixer
         private float[] _leftTail;
         private float[] _rightTail;
 
-        //public float elevation
-        //{
-        //    get { return elevation; }
-        //    set
-        //    {
-        //        if (value < Constants.MIN_ELEVATION_ANGLE || value > 180 + Constants.MIN_ELEVATION_ANGLE)
-        //        {
-        //            elevation = Constants.MIN_ELEVATION_ANGLE;
-        //        }
-        //        else if (value > 90 && value <= 180 + Constants.MIN_ELEVATION_ANGLE)
-        //        {
-        //            elevation = Constants.MAX_ELEVATION_ANGLE - (value - Constants.MAX_ELEVATION_ANGLE);
-        //        }
-        //        else
-        //        {
-        //            elevation = value;
-        //        }
-        //    }
-        //}
-
-        //public float horizontalPostion
-        //{
-        //    get { return horizontalPostion; }
-        //    set
-        //    {
-        //        var absAngle = Math.Abs(value);
-
-        //        if (absAngle > Constants.MAX_HORIZONATL_ANGLE_ABS)
-        //        {
-        //            _horizontalPostion = (Constants.MAX_HORIZONATL_ANGLE_ABS - (absAngle - Constants.MAX_HORIZONATL_ANGLE_ABS))
-        //                               * Math.Sign(value) * (-1);
-        //        }
-        //        else
-        //        {
-        //            _horizontalPostion = value;
-        //        }
-        //    }
-        //}
-
 
         public Convolution()
         {
@@ -121,7 +82,7 @@ namespace Mixer
 
             tail = new float[convolutionFunc.Length - 1];
             result = new float[channel.Length];
-            //Array.Copy(tmpBuff, channel.Length - 1, tail, 0, tail.Length);
+            Array.Copy(tmpBuff, channel.Length - 1, tail, 0, tail.Length);
             Array.Copy(tmpBuff, 0, result, 0, result.Length);
         }
 

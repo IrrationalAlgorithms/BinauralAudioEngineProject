@@ -193,11 +193,11 @@ namespace Mixer
                 
                 lock (_lockAudio)
                 {
-                    if (_audioPlayer != null)
-                    {
-                        //_audioPlayer.Close();
-                        //_audioPlayer = null;
-                    }
+                    //if (_audioPlayer != null)
+                    //{
+                    //    _audioPlayer.Close();
+                    //    _audioPlayer = null;
+                    //}
 
                     if (_fileStream != null)
                     {

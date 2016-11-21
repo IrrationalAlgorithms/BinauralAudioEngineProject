@@ -38,9 +38,10 @@ namespace Mixer
         private MasteringVoice _masteringVoice;
         private XAudio2 _xaudio2;
         private object _lockAudio = new object();
+        private bool _isRepeating;
         private bool _isConvolutionOn;
         List<double> leftHRTF_X;
-
+       
         public HRTFWindow()
         {
             InitializeComponent();
@@ -48,6 +49,7 @@ namespace Mixer
             leftHRTF_X = new List<double>();
 
             _isConvolutionOn = false;
+            _isRepeating = false;
             InitializeXAudio2();
             HeadPictureBackground();
             EllipseInitialization();
@@ -208,6 +210,7 @@ namespace Mixer
                     _audioPlayer = new AudioPlayer(_xaudio2, _fileStream);
                     _audioPlayer.SetConvolutionMode(_isConvolutionOn);
                     _audioPlayer.SetHorizontalPosition((int)AngleSlider.Value);
+                    _audioPlayer.IsRepeating = _isRepeating;
                     if (_isConvolutionOn)
                     {
                         _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
@@ -278,7 +281,7 @@ namespace Mixer
             }
         }
 
-        private void checkBox_Checked(object sender, RoutedEventArgs e)
+        private void Convolution_Checked(object sender, RoutedEventArgs e)
         {
 
             _isConvolutionOn = true;
@@ -297,7 +300,7 @@ namespace Mixer
               (int)AngleSlider.Value, Channel.Right), Channel.Right);
         }
 
-        private void checkBox_Unchecked(object sender, RoutedEventArgs e)
+        private void Convolution_Unchecked(object sender, RoutedEventArgs e)
         {
             _isConvolutionOn = false;
             lock (_lockAudio)
@@ -307,9 +310,24 @@ namespace Mixer
                     _audioPlayer.SetConvolutionMode(_isConvolutionOn);
                 }
             }
-            Sandbox.ApplyConvolutionChecked(false);
         }
 
+        private void LoopTrack_Changed(object sender, RoutedEventArgs e)
+        {
+            var checkbox = (CheckBox)sender;
+            var value = checkbox.IsChecked;
+            if (value != null)
+            {
+                _isRepeating = (bool)value;
+                lock (_lockAudio)
+                {
+                    if (_audioPlayer != null)
+                    {
+                        _audioPlayer.IsRepeating = _isRepeating;
+                    }
+                }
+            }
+        }
         private NativeFileStream GetFileStream(Channel channel) => new NativeFileStream
             (ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value, (int)AngleSlider.Value, channel), NativeFileMode.Open, NativeFileAccess.Read);
 

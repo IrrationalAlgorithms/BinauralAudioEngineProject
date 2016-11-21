@@ -70,19 +70,19 @@ namespace Mixer
                     tmpBuff[i] += tail[i];
                 }
             }
-            int offset = 0;
+            
             for (int i = 0; i < convolutionFunc.Length; i++)
             {
                 for (int k = 0; k < channel.Length; k++)
                 {
-                    tmpBuff[offset + k] += channel[k] * convolutionFunc[i];
+                    tmpBuff[i + k] += channel[k] * convolutionFunc[i];
                 }
-                offset++;
+                
             }
 
             tail = new float[convolutionFunc.Length - 1];
             result = new float[channel.Length];
-            Array.Copy(tmpBuff, channel.Length - 1, tail, 0, tail.Length);
+            Array.Copy(tmpBuff, channel.Length, tail, 0, tail.Length);
             Array.Copy(tmpBuff, 0, result, 0, result.Length);
         }
 

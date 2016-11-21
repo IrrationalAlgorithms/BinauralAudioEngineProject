@@ -21,13 +21,14 @@ using SharpDX;
 using SharpDX.XAudio2;
 using SharpDX.Multimedia;
 using SharpDX.MediaFoundation;
+using System.ComponentModel;
 
 namespace Mixer
 {
     /// <summary>
     /// Interaction logic for HRTFWindow.xaml
     /// </summary>
-    public partial class HRTFWindow : Window
+    public partial class HRTFWindow : Window, INotifyPropertyChanged
     {
         private double _offsetX;
         private double _offsetY;
@@ -41,19 +42,43 @@ namespace Mixer
         private bool _isRepeating;
         private bool _isConvolutionOn;
         List<double> leftHRTF_X;
-       
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public bool IsConvolution
+        {
+            get
+            {
+                return _isConvolutionOn;
+            }
+            set
+            {
+                _isConvolutionOn = value;
+                OnPropertyChanged("IsConvolution");
+            }
+        }
+
+        private void OnPropertyChanged(String name)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(name));
+            }
+        }
+
         public HRTFWindow()
         {
             InitializeComponent();
             //_generator = new SineGenerator();
             leftHRTF_X = new List<double>();
 
-            _isConvolutionOn = false;
+            IsConvolution = false;
             _isRepeating = false;
             InitializeXAudio2();
             HeadPictureBackground();
             EllipseInitialization();
             ChartInit();
+            DataContext = this;
         }
 
         private void ChartInit()
@@ -165,6 +190,13 @@ namespace Mixer
             EllipseRedrow(_offsetY, _offsetX);
             if (ApplyConvolution.IsChecked == true)
             {
+                lock (_lockAudio)
+                {
+                    if (_audioPlayer != null)
+                    {
+                        _audioPlayer.SetConvolutionFunctions(GetFileStream(Channel.Left), GetFileStream(Channel.Right));
+                    }
+                }
                 ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
                   (int)AngleSlider.Value, Channel.Left), Channel.Left);
                 ReadSoundBytes(ConvolutionResourseReader.GetSoundPath((int)ElevationSlider.Value,
@@ -284,7 +316,7 @@ namespace Mixer
         private void Convolution_Checked(object sender, RoutedEventArgs e)
         {
 
-            _isConvolutionOn = true;
+            IsConvolution = true;
             lock (_lockAudio)
             {
                 if (_audioPlayer != null)
@@ -302,7 +334,7 @@ namespace Mixer
 
         private void Convolution_Unchecked(object sender, RoutedEventArgs e)
         {
-            _isConvolutionOn = false;
+            IsConvolution = false;
             lock (_lockAudio)
             {
                 if (_audioPlayer != null)

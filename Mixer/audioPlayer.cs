@@ -90,8 +90,9 @@ namespace Mixer
         public void SetConvolutionMode(bool isOn)
         {
             _isConvolutionOn = isOn;
-
         }
+
+        public bool IsRepeating { get; set; }
 
         public void SetConvolutionFunctions(Stream leftStream, Stream rightStream)
         {
@@ -309,7 +310,7 @@ namespace Mixer
                         nextBuffer = ++nextBuffer % _audioBuffersRing.Length;
                     }
 
-                    if (endOfSong && State == PlayerState.Playing)
+                    if (endOfSong && !IsRepeating && State == PlayerState.Playing)
                     {
                         Stop();
                     }

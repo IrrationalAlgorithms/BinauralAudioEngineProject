@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d3="http://research.microsoft.com/DynamicDataDisplay/1.0"
         mc:Ignorable="d"
-        Title="HRTFWindow" Height="376.439" Width="730.737"
+        Title="HRTFWindow" Height="380" Width="730.737"
         xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
         xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         xmlns:dvc="clr-namespace:System.Windows.Forms.DataVisualization.Charting;assembly=System.Windows.Forms.DataVisualization">
@@ -27,8 +27,9 @@
         <Slider x:Name="AngleSlider" HorizontalAlignment="Left" Margin="113,226,0,0" VerticalAlignment="Top" Width="190" RenderTransformOrigin="0.462,0.575" TickFrequency="5" IsSnapToTickEnabled="True"
                 Minimum="-90" Maximum="90" ValueChanged="AngleSlider_ValueChanged" Grid.ColumnSpan="2"/>
         <Slider x:Name="ElevationSlider" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" Width="20" RenderTransformOrigin="0.462,0.575" TickFrequency="10" IsSnapToTickEnabled="True" 
-                Minimum="-40" Maximum="90" ValueChanged="ElevationSlider_ValueChanged" Orientation="Vertical" Height="191" Grid.Column="1"/>
-        <CheckBox x:Name="ApplyConvolution" Content="Apply convolution" HorizontalAlignment="Left" Margin="17,295,0,0" VerticalAlignment="Top" Checked="checkBox_Checked" Unchecked="checkBox_Unchecked"/>
+                Minimum="-40" Maximum="90" ValueChanged="ElevationSlider_ValueChanged" Orientation="Vertical" Height="191" Grid.Column="1" IsEnabled="{Binding Path=IsConvolution}" />
+        <CheckBox x:Name="ApplyConvolution" Content="Apply convolution" HorizontalAlignment="Left" Margin="17,295,0,0" VerticalAlignment="Top" Checked="Convolution_Checked" Unchecked="Convolution_Unchecked"/>
+        <CheckBox x:Name="LoopTrack" Content="Loop track" HorizontalAlignment="Left" Margin="17,320,0,0" VerticalAlignment="Top"  Checked="LoopTrack_Changed" Unchecked="LoopTrack_Changed"/>
         <Canvas x:Name="HeadPicture" HorizontalAlignment="Left" Height="182" Margin="113,39,0,0" VerticalAlignment="Top" Width="190" Grid.ColumnSpan="2"/>
         <Label x:Name="label" Content="Label" HorizontalAlignment="Left" Margin="187,289,0,0" VerticalAlignment="Top" Width="330" Grid.ColumnSpan="2"/>
         <Label x:Name="label2" Content="Right HRTF" HorizontalAlignment="Left" Margin="48,173,0,0" VerticalAlignment="Top" Grid.Column="1"/>

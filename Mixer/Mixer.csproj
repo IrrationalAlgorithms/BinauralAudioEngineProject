@@ -81,6 +81,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="IInterpolation.cs" />
+    <Compile Include="LinearInterpolatoin.cs" />
+    <Compile Include="StreamLoader.cs" />
     <Compile Include="Utils.cs" />
     <Page Include="HRTFWindow.xaml">
       <SubType>Designer</SubType>
